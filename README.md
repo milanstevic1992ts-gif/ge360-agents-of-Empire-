@@ -215,3 +215,56 @@ GE360 resta un'implementazione nuova e minimale: non incorpora questi framework 
 ## Licenza
 
 MIT. Vedi `LICENSE`.
+
+
+## Aggiornamenti versionati
+
+Dalla release **0.5.0** JARVIS usa un sistema di aggiornamento versionato.
+
+File principali:
+
+- `VERSION` — versione installata;
+- `release.json` — versione, canale e schema runtime;
+- `scripts/migrate.py` — migrazioni incrementali;
+- `scripts/update.sh` — backup + pull + install + migrazione + doctor;
+- `scripts/rollback.sh` — ripristino di un backup precedente.
+
+Comandi:
+
+```bash
+jarvis version
+jarvis update
+jarvis rollback
+```
+
+Prima di ogni update viene creato un backup sotto:
+
+```text
+~/.local/share/ge360-jarvis/backups/
+```
+
+La cartella `runtime/` non viene sovrascritta dal deploy. Le migrazioni aggiornano lo schema senza cancellare la memoria operativa.
+
+### Regola per le prossime release
+
+Ogni modifica che cambia dati persistenti deve:
+
+1. aumentare `schema_version` in `release.json`;
+2. aggiungere una migrazione incrementale in `scripts/migrate.py`;
+3. avere test automatici;
+4. passare `jarvis doctor`;
+5. restare rollbackabile.
+
+## Stati agenti e timeline
+
+La dashboard 0.5.0 mostra stati:
+
+- `READY`
+- `WORKING`
+- `WAITING`
+- `DONE`
+- `ERROR`
+
+e una timeline persistente delle deleghe JARVIS.
+
+La telemetria è oggi fornita dal registro GE360 versionato. È già presente un adapter opzionale per **Codex App Server**. Quando useremo App Server come provider primario, potremo mappare eventi strutturati come `thread/status/changed` e `collabToolCall` senza cambiare la dashboard o lo schema dell'API.

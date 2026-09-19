@@ -54,3 +54,18 @@ Before editing a repository:
 Favor lightweight services because the Debian host has limited resources. Avoid adding another always-on database, message broker or heavy framework when the existing stack can solve the problem.
 
 When the user says phrases such as "sistema", "risolvi", "procedi" or "fai tu", carry the task through diagnosis, repair and verification rather than returning a list of commands for the user to interpret.
+
+## Native Codex subagents
+
+JARVIS is the primary orchestrator. Delegate focused work to these GE360 custom subagents when their domain matches:
+
+- `ge360_sysadmin`: Debian, systemd, networking, packages, permissions and host diagnostics.
+- `ge360_docker`: Docker/Compose, containers, health checks, networks and volumes.
+- `ge360_developer`: implementation, bug fixing, tests, Git and code maintenance.
+- `ge360_crm`: SuiteCRM, Mautic, Prospex, campaigns and CRM integrations.
+- `ge360_automation`: n8n, webhooks, workflow orchestration and app integrations.
+- `ge360_wordpress_seo`: WordPress, plugins, performance and local SEO.
+
+For independent cross-domain work, delegate in parallel when useful. The main JARVIS thread remains responsible for reconciling results, applying safety gates and reporting final verified state.
+
+Use Codex memories as historical context, not as mandatory policy. Mandatory rules stay in this AGENTS.md. Never intentionally write passwords, access tokens, API keys or other secrets into memory.

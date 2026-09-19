@@ -2,16 +2,21 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+import asyncio
+import json
+import queue
+import re
 import shlex
 
 from fastapi import Depends, FastAPI, HTTPException, File, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 import uvicorn
 
+from . import chat
 from .agents import create_agent, list_agents
-from .appserver import probe_threads
+from .appserver import AppServerError, app_server, probe_threads
 from .activity import agents_for_session, latest_by_agent, record as record_activity, timeline as agent_timeline
 from .codex import codex_status
 from .config import Settings, load_settings
@@ -121,6 +126,25 @@ class FeedbackRequest(BaseModel):
     rating: int
 
 
+class ChatThreadRequest(BaseModel):
+    task: str = Field(min_length=1, max_length=20000)
+    workspace_id: str
+    attachments: list[str] = Field(default_factory=list)
+
+
+class ChatMessageRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=20000)
+    attachments: list[str] = Field(default_factory=list)
+
+
+class ChatDecisionRequest(BaseModel):
+    decision: str
+
+
+class ChatAnswerRequest(BaseModel):
+    answers: dict[str, list[str]]
+
+
 def _workspace(workspace_id: str):
     for ws in settings.workspaces:
         if ws.id == workspace_id:
@@ -182,6 +206,25 @@ def _route_text(task: str, files: list[dict]) -> str:
         return task
     names = ", ".join(item["original_name"] for item in files)
     return f"{task}\n\nALLEGATI: {names}"
+
+
+def _chat_instructions(route) -> str:
+    collaborators = ", ".join(route.collaborators) if route.collaborators else "nessuno"
+    return (
+        "Sei JARVIS, orchestratore GE360. Rispondi in modo naturale e conciso come in una chat, "
+        "ma quando serve esegui realmente il lavoro usando strumenti e subagenti Codex. "
+        f"Agente principale suggerito dal router: {route.primary_agent}. "
+        f"Collaboratori suggeriti: {collaborators}. "
+        f"Rischio stimato: {route.risk}. "
+        "Mostra all'utente cosa stai facendo con messaggi utili, non con rumore da terminale. "
+        "Quando un'operazione richiede approvazione, attendi la decisione dell'utente. "
+        "Non inventare risultati, non memorizzare segreti e verifica sempre l'esito finale."
+    )
+
+
+def _chat_title(text: str) -> str:
+    clean = re.sub(r"\s+", " ", text).strip()
+    return clean[:72] or "Nuova chat"
 
 
 def _route_payload(route):
@@ -255,6 +298,209 @@ def status():
 @app.get("/api/codex/app-server/probe", dependencies=[Depends(guard)])
 def codex_app_server_probe():
     return probe_threads()
+
+
+@app.get("/api/chat/threads", dependencies=[Depends(guard)])
+def chat_threads():
+    return {"threads": chat.list_threads(60), "app_server": app_server.status()}
+
+
+@app.get("/api/chat/threads/{thread_id}", dependencies=[Depends(guard)])
+def chat_thread(thread_id: str):
+    thread = chat.get_thread(thread_id)
+    if not thread:
+        raise HTTPException(status_code=404, detail="Chat non trovata")
+    return {"thread": thread, "messages": chat.list_messages(thread_id, 400)}
+
+
+@app.post("/api/chat/threads", dependencies=[Depends(guard)])
+def chat_create_thread(body: ChatThreadRequest):
+    ws = _workspace(body.workspace_id)
+    files = resolve_files(body.attachments)
+    try:
+        route = route_task(_route_text(body.task, files), _agents_payload())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    suggested = _route_payload(route)
+    powerful_agents = {
+        "ge360_sysadmin",
+        "ge360_docker",
+        "ge360_n8n_engineer",
+        "ge360_automation",
+        "ge360_crm",
+    }
+    sandbox = (
+        "danger-full-access"
+        if route.primary_agent in powerful_agents or any(x in powerful_agents for x in route.collaborators)
+        else "workspace-write"
+    )
+
+    try:
+        thread_id = app_server.create_thread(
+            model=route.model,
+            cwd=str(ws.path),
+            developer_instructions=_chat_instructions(route),
+            sandbox=sandbox,
+        )
+        thread = chat.create_thread(
+            thread_id,
+            _chat_title(body.task),
+            ws.id,
+            str(ws.path),
+            route.model,
+            suggested["effort"],
+            route.primary_agent,
+            route.collaborators,
+        )
+        user_message = chat.add_message(
+            thread_id,
+            "user",
+            body.task,
+            meta={"attachments": [f["original_name"] for f in files]},
+        )
+        record_activity(thread_id, "jarvis", "working", "chat_started", "Conversazione JARVIS avviata", "app-server")
+        record_activity(thread_id, route.primary_agent, "working", "delegated", "Agente principale selezionato", "app-server")
+        for collaborator in route.collaborators:
+            record_activity(thread_id, collaborator, "waiting", "queued", "Collaboratore disponibile", "app-server")
+        remember_launch(thread_id, _route_text(body.task, files), route)
+
+        prompt = body.task
+        file_context = attachment_context(files)
+        if file_context:
+            prompt += "\n\n" + file_context
+        turn_id = app_server.start_turn(
+            thread_id,
+            prompt,
+            effort=suggested["effort"],
+            model=route.model,
+        )
+        return {
+            "ok": True,
+            "thread": chat.get_thread(thread_id) or thread,
+            "user_message": user_message,
+            "route": suggested,
+            "turn_id": turn_id,
+        }
+    except AppServerError as exc:
+        raise HTTPException(status_code=503, detail=f"Codex App Server: {exc}") from exc
+
+
+@app.post("/api/chat/threads/{thread_id}/messages", dependencies=[Depends(guard)])
+def chat_send_message(thread_id: str, body: ChatMessageRequest):
+    thread = chat.get_thread(thread_id)
+    if not thread:
+        raise HTTPException(status_code=404, detail="Chat non trovata")
+    files = resolve_files(body.attachments)
+    user_message = chat.add_message(
+        thread_id,
+        "user",
+        body.text,
+        meta={"attachments": [f["original_name"] for f in files]},
+    )
+    prompt = body.text
+    file_context = attachment_context(files)
+    if file_context:
+        prompt += "\n\n" + file_context
+    try:
+        turn_id = app_server.start_turn(
+            thread_id,
+            prompt,
+            effort=str(thread.get("effort") or "low"),
+            model=str(thread.get("model") or ""),
+        )
+        record_activity(thread_id, "jarvis", "working", "chat_message", "Nuovo messaggio utente", "app-server")
+        return {"ok": True, "message": user_message, "turn_id": turn_id}
+    except AppServerError as exc:
+        chat.add_message(thread_id, "system", str(exc), kind="error", status="error")
+        raise HTTPException(status_code=503, detail=f"Codex App Server: {exc}") from exc
+
+
+@app.get("/api/chat/threads/{thread_id}/messages", dependencies=[Depends(guard)])
+def chat_messages(thread_id: str, limit: int = 400):
+    if not chat.get_thread(thread_id):
+        raise HTTPException(status_code=404, detail="Chat non trovata")
+    return {"messages": chat.list_messages(thread_id, limit)}
+
+
+@app.get("/api/chat/threads/{thread_id}/events", dependencies=[Depends(guard)])
+async def chat_events(thread_id: str):
+    if not chat.get_thread(thread_id):
+        raise HTTPException(status_code=404, detail="Chat non trovata")
+    box = app_server.subscribe(thread_id)
+
+    async def stream():
+        try:
+            yield "event: ready\ndata: {}\n\n"
+            while True:
+                try:
+                    event = await asyncio.to_thread(box.get, True, 15)
+                    payload = json.dumps(event, ensure_ascii=False)
+                    yield f"data: {payload}\n\n"
+                except queue.Empty:
+                    yield ": ping\n\n"
+        finally:
+            app_server.unsubscribe(thread_id, box)
+
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
+
+@app.post("/api/chat/threads/{thread_id}/interrupt", dependencies=[Depends(guard)])
+def chat_interrupt(thread_id: str):
+    if not chat.get_thread(thread_id):
+        raise HTTPException(status_code=404, detail="Chat non trovata")
+    try:
+        app_server.interrupt(thread_id)
+        return {"ok": True}
+    except AppServerError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.post("/api/chat/requests/{request_id}/decision", dependencies=[Depends(guard)])
+def chat_request_decision(request_id: str, body: ChatDecisionRequest):
+    req = chat.get_server_request(request_id)
+    if not req:
+        raise HTTPException(status_code=404, detail="Richiesta Codex non trovata")
+    if req.get("status") != "pending":
+        raise HTTPException(status_code=409, detail="Richiesta già risolta")
+    if body.decision not in {"accept", "acceptForSession", "decline", "cancel"}:
+        raise HTTPException(status_code=400, detail="Decisione non valida")
+    method = str(req.get("method") or "")
+    if method not in {
+        "item/commandExecution/requestApproval",
+        "item/fileChange/requestApproval",
+    }:
+        raise HTTPException(status_code=400, detail="Questa richiesta non usa una decisione semplice")
+    try:
+        app_server.respond_server_request(request_id, {"decision": body.decision})
+        return {"ok": True}
+    except AppServerError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.post("/api/chat/requests/{request_id}/answer", dependencies=[Depends(guard)])
+def chat_request_answer(request_id: str, body: ChatAnswerRequest):
+    req = chat.get_server_request(request_id)
+    if not req:
+        raise HTTPException(status_code=404, detail="Richiesta Codex non trovata")
+    if req.get("status") != "pending":
+        raise HTTPException(status_code=409, detail="Richiesta già risolta")
+    if req.get("method") != "item/tool/requestUserInput":
+        raise HTTPException(status_code=400, detail="La richiesta non accetta risposte testuali")
+    answers = {key: {"answers": values} for key, values in body.answers.items()}
+    try:
+        app_server.respond_server_request(request_id, {"answers": answers})
+        return {"ok": True}
+    except AppServerError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @app.get("/api/agents", dependencies=[Depends(guard)])

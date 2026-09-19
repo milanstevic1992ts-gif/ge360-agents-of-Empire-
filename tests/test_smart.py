@@ -10,6 +10,7 @@ AGENTS = [
     {"id": "ge360_docker", "description": "Docker Compose containers"},
     {"id": "ge360_developer", "description": "Code Git tests"},
     {"id": "ge360_crm", "description": "SuiteCRM Mautic Prospex"},
+    {"id": "ge360_data_intake", "description": "CSV XLSX Excel data cleaning normalization deduplication contacts"},
     {"id": "ge360_n8n_engineer", "description": "n8n workflows webhooks nodes expressions API"},
     {"id": "ge360_automation", "description": "workflow webhook automation integrations"},
     {"id": "ge360_wordpress_seo", "description": "WordPress SEO"},
@@ -34,6 +35,14 @@ class SmartRouterTests(unittest.TestCase):
         self.assertEqual(route.primary_agent, "ge360_crm")
         self.assertIn("ge360_docker", route.collaborators)
         self.assertIn(route.model, {"gpt-5.6-terra", "gpt-5.6-sol"})
+
+    def test_routes_csv_contacts_to_data_intake(self):
+        route = smart.route_task(
+            "Ho allegato un CSV con amministratori condominiali e geometri. Normalizza i contatti e deduplica.",
+            AGENTS,
+        )
+        self.assertEqual(route.primary_agent, "ge360_data_intake")
+        self.assertGreater(route.matched["ge360_data_intake"], route.matched.get("ge360_crm", 0))
 
     def test_routes_n8n_to_dedicated_engineer(self):
         route = smart.route_task(

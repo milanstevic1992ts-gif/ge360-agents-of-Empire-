@@ -187,3 +187,22 @@ footer{color:#526176;text-align:center;padding:20px 10px 35px;font-size:11px;let
 .timeline-status.waiting{color:#f1cf88;border-color:#e6bd6545}
 .timeline-status.done{color:#78f0bb;border-color:#55e6a645}
 .timeline-status.error{color:#ff9198;border-color:#ff6c7645}
+
+.attachments-box{margin-top:12px;border:1px solid #ffffff10;background:#080c12aa;border-radius:14px;padding:13px}
+.attachments-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.file-list{margin-top:10px;display:flex;flex-direction:column;gap:7px}
+.file-row{display:flex;align-items:center;gap:10px;border:1px solid #ffffff0d;background:#0b1118;border-radius:11px;padding:9px 10px;cursor:pointer}
+.file-row:hover{border-color:#ffffff1f}
+.file-row input{width:auto;flex:0 0 auto}
+.file-main{min-width:0;flex:1}
+.file-main b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.file-state{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#72cfae}
+.file-row.missing{opacity:.55}
+.file-row.missing .file-state{color:#d87880}
+.agent-card.agent-data{border-color:#5fd6b43d;background:linear-gradient(180deg,#0f282188,#080c12aa)}
+.agent-card.agent-data:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#5fd6b4}
+.agent-data .agent-avatar{background:#102b2488;border-color:#5fd6b455;color:#91ead0;font-size:9px}
+@media(max-width:760px){
+  .attachments-head{align-items:flex-start;flex-direction:column}
+  .attachments-head .row-actions{width:100%}
+}

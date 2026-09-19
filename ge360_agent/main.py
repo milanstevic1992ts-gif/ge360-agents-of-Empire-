@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 import uvicorn
 
 from .agents import create_agent, list_agents
+from .appserver import probe_threads
 from .activity import agents_for_session, latest_by_agent, record as record_activity, timeline as agent_timeline
 from .codex import codex_status
 from .config import Settings, load_settings
@@ -239,6 +240,11 @@ def status():
             "note": "La CLI espone /status per uso token/quota della sessione. Il saldo crediti account completo non è esposto da una API CLI pubblica documentata.",
         },
     }
+
+
+@app.get("/api/codex/app-server/probe", dependencies=[Depends(guard)])
+def codex_app_server_probe():
+    return probe_threads()
 
 
 @app.get("/api/agents", dependencies=[Depends(guard)])

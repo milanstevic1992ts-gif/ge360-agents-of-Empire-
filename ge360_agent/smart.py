@@ -47,10 +47,27 @@ KNOWN_AGENTS = {
         },
         "label": "CRM",
     },
-    "ge360_automation": {
-        "anchors": {"n8n": 10, "webhook": 5},
+    "ge360_n8n_engineer": {
+        "anchors": {
+            "n8n": 18,
+            "execute workflow": 10,
+            "code node": 8,
+            "webhook node": 8,
+            "n8n api": 10,
+            "queue mode": 8,
+        },
         "keywords": {
-            "n8n", "workflow", "webhook", "automazione", "automation", "trigger", "integrazione",
+            "n8n", "workflow", "node", "nodes", "webhook", "expression", "expressions",
+            "credential", "credentials", "execution", "executions", "sub-workflow", "subworkflow",
+            "retry", "error workflow", "code node", "execute workflow", "queue mode", "redis",
+            "worker", "webhook processor", "import", "export", "json",
+        },
+        "label": "n8n Engineer",
+    },
+    "ge360_automation": {
+        "anchors": {"webhook": 4, "automazione": 5, "automation": 5},
+        "keywords": {
+            "workflow", "webhook", "automazione", "automation", "trigger", "integrazione",
             "integration", "retry", "flow", "cron", "orchestrazione", "orchestration",
         },
         "label": "Automation",

@@ -65,11 +65,21 @@ EFFORT_IDS = {e["id"] for e in REASONING_EFFORTS}
 
 app = FastAPI(
     title="GE360 Agent Control Center",
-    version="0.4.0",
+    version="0.4.1",
     docs_url=None,
     redoc_url=None,
 )
 app.mount("/assets", StaticFiles(directory=WEB), name="assets")
+
+
+@app.middleware("http")
+async def no_stale_dashboard_cache(request, call_next):
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/assets/"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 
 class NewSession(BaseModel):

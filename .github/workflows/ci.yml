@@ -16,6 +16,8 @@ jobs:
         run: pip install -r requirements.txt
       - name: Compile Python
         run: python -m compileall -q ge360_agent
+      - name: Runtime migration
+        run: python scripts/migrate.py
       - name: Unit tests
         run: python -m unittest discover -s tests -v
       - name: Validate dashboard JavaScript
@@ -26,4 +28,6 @@ jobs:
           bash -n scripts/codex-login.sh
           bash -n scripts/doctor.sh
           bash -n scripts/jarvis.sh
+          bash -n scripts/update.sh
+          bash -n scripts/rollback.sh
           bash -n scripts/uninstall.sh

@@ -30,7 +30,7 @@ else
 fi
 
 if [ -x "$ROOT/.venv/bin/python" ]; then
-  if (cd "$ROOT" && "$ROOT/.venv/bin/python" -c 'import fastapi, uvicorn, ge360_agent.main, ge360_agent.smart, ge360_agent.activity, ge360_agent.appserver, ge360_agent.versioning') >/dev/null 2>&1; then
+  if (cd "$ROOT" && "$ROOT/.venv/bin/python" -c 'import fastapi, uvicorn, ge360_agent.main, ge360_agent.smart, ge360_agent.activity, ge360_agent.appserver, ge360_agent.uploads, ge360_agent.versioning') >/dev/null 2>&1; then
     ok "Backend + Smart Router + update modules importabili"
   else
     fail "Backend Python o Smart Router non importabile"

@@ -27,15 +27,24 @@ def codex_status() -> dict:
             "binary": None,
             "version": None,
             "authenticated": False,
+            "billing_mode": "unknown",
             "auth": "Codex CLI non trovato",
         }
 
     _, version = _run([binary, "--version"])
     code, auth = _run([binary, "login", "status"])
+    auth_lower = auth.lower()
+    if "api key" in auth_lower or "api-key" in auth_lower:
+        billing_mode = "api"
+    elif "chatgpt" in auth_lower:
+        billing_mode = "chatgpt"
+    else:
+        billing_mode = "unknown"
     return {
         "installed": True,
         "binary": binary,
         "version": version or "unknown",
         "authenticated": code == 0,
+        "billing_mode": billing_mode,
         "auth": auth or ("login ok" if code == 0 else "login richiesto"),
     }

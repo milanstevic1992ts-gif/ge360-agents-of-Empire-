@@ -1,0 +1,8 @@
+name = "WordPress Safe Change"
+description = "Modifica WordPress con checkpoint, controllo mobile e verifica SEO."
+agent = "ge360_wordpress_seo"
+model = "gpt-5.6-terra"
+risk = "medium"
+prompt = """
+Prima di modificare WordPress crea un checkpoint reversibile. Conserva contenuti, media e metadati SEO. Applica la modifica richiesta seguendo sicurezza WordPress, poi verifica pagina, mobile, link importanti, performance di base e assenza di errori evidenti.
+"""

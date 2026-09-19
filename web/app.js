@@ -187,7 +187,8 @@ async function smartLaunch() {
 function renderAgents(agents, sessions) {
   state.agents=agents||[];
   const jarvisActive=sessions.length>0;
-  const query=($("agent-search")?.value||"").trim().toLowerCase();
+  const searchInput=$("agent-search");
+  const query=(searchInput ? searchInput.value : "").trim().toLowerCase();
   if ($("agent-count")) {
     $("agent-count").textContent=state.agents.length+" agenti + JARVIS";
   }
@@ -421,7 +422,9 @@ $("analyze-task").onclick=analyzeTask;
 $("smart-launch").onclick=smartLaunch;
 $("smart-task").oninput=()=>{ state.route=null; };
 $("toggle-new-agent").onclick=()=>$("new-agent-form").classList.toggle("hidden");
-$("agent-search").oninput=()=>renderAgents(state.agents,state.status?.sessions||[]);
+if ($("agent-search")) {
+  $("agent-search").oninput=()=>renderAgents(state.agents,state.status?.sessions||[]);
+}
 $("create-agent").onclick=createAgent;
 $("agent-detail-close").onclick=()=>$("agent-detail-panel").classList.add("hidden");
 $("agent-detail-copy").onclick=()=>copyText($("agent-detail-text").textContent,()=>{

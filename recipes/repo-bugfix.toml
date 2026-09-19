@@ -1,0 +1,8 @@
+name = "Repo Bugfix"
+description = "Bugfix Git mirato con status, patch minima, test e diff finale."
+agent = "ge360_developer"
+model = "gpt-5.6-terra"
+risk = "low"
+prompt = """
+Apri la repository indicata, controlla git status e non sovrascrivere modifiche non correlate. Riproduci o individua il bug, applica la patch minima, esegui test mirati e mostra il diff finale. Non fare force push e non riscrivere la storia Git.
+"""

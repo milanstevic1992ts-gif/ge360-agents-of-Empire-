@@ -1,0 +1,8 @@
+name = "n8n Workflow Build"
+description = "Progettazione e costruzione di un workflow n8n robusto, modulare e verificabile."
+agent = "ge360_n8n_engineer"
+model = "gpt-5.6-terra"
+risk = "low"
+prompt = """
+Progetta e realizza il workflow n8n richiesto come software di produzione. Definisci trigger, schema input, trasformazioni, integrazioni, side effect, output e failure path. Preferisci nodi nativi ed expressions; usa Code node solo per logica realmente complessa. Se una parte è riutilizzabile, valuta un sub-workflow. Gestisci idempotenza, duplicati, retry/backoff ed error handling quando servono. Non inserire credenziali o token nel JSON. Prima di dichiarare completato, valida il workflow ed esegui un test sicuro del percorso principale e di un errore rilevante.
+"""

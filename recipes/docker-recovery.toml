@@ -1,0 +1,8 @@
+name = "Docker Recovery"
+description = "Ripristino mirato di un servizio Docker/Compose con backup e verifica."
+agent = "ge360_docker"
+model = "gpt-5.6-terra"
+risk = "medium"
+prompt = """
+Diagnostica il servizio Docker/Compose indicato. Prima raccogli compose ps, inspect, log e project labels. Conserva env, volumi e database. Applica la modifica minima reversibile e ricrea solo il servizio interessato. Verifica health e comportamento applicativo.
+"""

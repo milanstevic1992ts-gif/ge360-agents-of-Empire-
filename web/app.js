@@ -1,4 +1,10 @@
-const state = { status: null, active: null, timer: null, agents: [] };
+const state = {
+  status: null,
+  active: null,
+  timer: null,
+  agents: [],
+  route: null
+};
 const $ = (id) => document.getElementById(id);
 
 function token() { return localStorage.getItem("ge360_token") || ""; }
@@ -33,7 +39,9 @@ function pct(used,total) {
   return Math.round(used*100/total);
 }
 function safe(text) {
-  return String(text ?? "").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  return String(text ?? "").replace(/[&<>"']/g, c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
 }
 function metric(label, value) {
   return '<div class="metric"><div class="label">'+safe(label)+'</div><div class="value">'+safe(value)+'</div></div>';
@@ -44,9 +52,11 @@ function sessionOptions(sessions, emptyLabel="Nessuna sessione") {
 }
 function copyText(text, success) {
   if (!text) return;
-  navigator.clipboard.writeText(text).then(()=>{
-    if (success) success();
-  }).catch(()=>alert("Impossibile copiare automaticamente. Seleziona il testo manualmente."));
+  navigator.clipboard.writeText(text).then(()=>{ if (success) success(); })
+    .catch(()=>alert("Impossibile copiare automaticamente. Seleziona il testo manualmente."));
+}
+function routeBadge(label,value,cls="") {
+  return '<span class="route-badge '+safe(cls)+'"><b>'+safe(label)+'</b> '+safe(value)+'</span>';
 }
 
 function renderModels(models) {
@@ -57,18 +67,98 @@ function renderModels(models) {
   else if (models.some(m=>m.id==="gpt-5.6-luna")) select.value="gpt-5.6-luna";
   updateModelNote();
 }
+function renderEfforts(efforts) {
+  const select=$("effort");
+  const old=select.value || "low";
+  select.innerHTML=(efforts||[]).map(e=>'<option value="'+safe(e.id)+'">'+safe(e.name)+'</option>').join('');
+  if ((efforts||[]).some(e=>e.id===old)) select.value=old;
+  else select.value="low";
+  updateModelNote();
+}
 function updateModelNote() {
   const models=state.status?.models||[];
-  const item=models.find(m=>m.id===$("model").value);
-  $("model-note").textContent=item ? item.note : "";
+  const efforts=state.status?.reasoning_efforts||[];
+  const model=models.find(m=>m.id===$("model").value);
+  const effort=efforts.find(e=>e.id===$("effort").value);
+  $("model-note").textContent=[
+    model ? model.note : "",
+    effort ? "Ragionamento "+effort.name.toLowerCase()+": "+effort.note : ""
+  ].filter(Boolean).join(" · ");
 }
+function renderRecipes(recipes) {
+  const select=$("recipe");
+  const old=select.value;
+  const options=['<option value="">Playbook rapido…</option>'].concat(
+    (recipes||[]).map(r=>'<option value="'+safe(r.id)+'">'+safe(r.name)+' · '+safe(r.agent)+'</option>')
+  );
+  select.innerHTML=options.join("");
+  if((recipes||[]).some(r=>r.id===old)) select.value=old;
+}
+function loadRecipe() {
+  const recipe=(state.status?.recipes||[]).find(r=>r.id===$("recipe").value);
+  if(!recipe) return;
+  $("smart-task").value=recipe.prompt;
+  state.route=null;
+  $("route-primary").textContent=recipe.name;
+  $("route-details").innerHTML=
+    routeBadge("Agente",recipe.agent)+
+    routeBadge("Modello",recipe.model)+
+    routeBadge("Rischio",recipe.risk,recipe.risk);
+  $("route-reason").textContent=recipe.description;
+  $("route-result").classList.remove("empty");
+}
+function renderRoute(route) {
+  state.route=route;
+  const collaborators=(route.collaborators||[]).length ? route.collaborators.join(", ") : "nessuno";
+  $("route-primary").textContent="Agente principale: "+route.primary_agent;
+  $("route-details").innerHTML=
+    routeBadge("Collaboratori",collaborators)+
+    routeBadge("Modello",route.model)+
+    routeBadge("Reasoning",route.effort)+
+    routeBadge("Rischio",route.risk,route.risk);
+  $("route-reason").textContent=route.reason||"";
+  $("route-result").classList.remove("empty");
+}
+async function analyzeTask() {
+  const task=$("smart-task").value.trim();
+  if(!task) return alert("Descrivi prima il lavoro.");
+  $("route-primary").textContent="Analisi locale…";
+  $("route-details").innerHTML="";
+  $("route-reason").textContent="";
+  try {
+    const r=await api("/api/smart/route",{method:"POST",body:JSON.stringify({task})});
+    renderRoute(r.route);
+  } catch(e) {
+    $("route-primary").textContent="Errore";
+    $("route-reason").textContent=e.message;
+  }
+}
+async function smartLaunch() {
+  const task=$("smart-task").value.trim();
+  if(!task) return alert("Descrivi prima il lavoro.");
+  try {
+    if(!state.route) await analyzeTask();
+    const body={
+      task,
+      workspace_id:$("workspace").value,
+      name:""
+    };
+    const r=await api("/api/smart/launch",{method:"POST",body:JSON.stringify(body)});
+    state.active=r.name;
+    renderRoute(r.route);
+    await refresh();
+    await updateScreen();
+    $("terminal-panel").scrollIntoView({behavior:"smooth",block:"start"});
+  } catch(e) { alert(e.message); }
+}
+
 function renderAgents(agents, sessions) {
   state.agents=agents||[];
   const jarvisActive=sessions.length>0;
   const master='<article class="agent-card master">'+
     '<div class="agent-top"><div><div class="agent-name">JARVIS</div><div class="agent-role">ORCHESTRATORE CODEX</div></div>'+
     '<span class="agent-status '+(jarvisActive?'active':'ready')+'">'+(jarvisActive?'ATTIVO':'PRONTO')+'</span></div>'+
-    '<p>Coordina il lavoro, sceglie quando delegare e raccoglie i risultati degli agenti specializzati.</p>'+
+    '<p>Coordina, instrada il lavoro, sceglie i subagenti e raccoglie il risultato finale.</p>'+
     '<div class="agent-footer"><span>'+(sessions.length? sessions.length+' sessione/i':'nessuna sessione')+'</span></div></article>';
 
   const cards=state.agents.map((a,i)=>'<article class="agent-card">'+
@@ -89,6 +179,36 @@ function showAgentDetail(index) {
   $("agent-detail-panel").classList.remove("hidden");
   $("agent-detail-panel").scrollIntoView({behavior:"smooth",block:"start"});
 }
+function renderSmartMemory(smart) {
+  const stats=smart?.stats||[];
+  $("smart-stats").innerHTML=stats.length ? stats.map(x=>{
+    const good=Number(x.good||0), bad=Number(x.bad||0), total=Number(x.total||0);
+    return '<div class="memory-stat"><b>'+safe(x.primary_agent)+'</b><span>'+total+' incarichi · '+good+' ✓ · '+bad+' △</span></div>';
+  }).join("") : '<div class="sub">La memoria operativa inizierà a popolarsi dopo il primo avvio Smart.</div>';
+
+  const events=smart?.events||[];
+  $("activity").innerHTML=events.length ? events.map(e=>{
+    const rating=e.rating===1?'✓ riuscito':(e.rating===-1?'△ da migliorare':'in attesa feedback');
+    return '<div class="activity-row">'+
+      '<div class="activity-main"><div><b>'+safe(e.primary_agent)+'</b> <span class="route-badge '+safe(e.risk)+'">'+safe(e.risk)+'</span></div>'+
+      '<div class="sub">'+safe(e.task_preview)+'</div>'+
+      '<div class="tiny">'+safe(e.session)+' · '+safe(e.model)+' · '+safe(e.created_at)+'</div></div>'+
+      '<div class="activity-feedback"><span class="tiny">'+safe(rating)+'</span>'+
+      '<button class="ghost tiny-button" data-feedback-session="'+safe(e.session)+'" data-rating="1">✓</button>'+
+      '<button class="ghost tiny-button" data-feedback-session="'+safe(e.session)+'" data-rating="-1">△</button></div></div>';
+  }).join("") : '<div class="sub">Nessun incarico Smart ancora.</div>';
+
+  document.querySelectorAll("[data-feedback-session]").forEach(btn=>{
+    btn.onclick=()=>sendFeedback(btn.getAttribute("data-feedback-session"),Number(btn.getAttribute("data-rating")));
+  });
+}
+async function sendFeedback(session,rating) {
+  try {
+    await api("/api/smart/feedback",{method:"POST",body:JSON.stringify({session,rating})});
+    await refresh();
+  } catch(e) { alert(e.message); }
+}
+
 function renderStatus(s) {
   state.status = s;
   $("overall").textContent = "SERVER ONLINE";
@@ -101,9 +221,15 @@ function renderStatus(s) {
     metric("DISCO", pct(disk.used,disk.total)+"% usato") +
     metric("CODEX", s.codex.installed ? (s.codex.authenticated ? (s.codex.billing_mode==="api" ? "API KEY ⚠" : (s.codex.billing_mode==="chatgpt" ? "CHATGPT" : "LOGIN OK")) : "LOGIN RICHIESTO") : "NON INSTALLATO");
 
+  const currentWorkspace=$("workspace").value;
   $("workspace").innerHTML = s.workspaces.map(w=>'<option value="'+safe(w.id)+'">'+safe(w.name)+(w.exists?"":" · MANCANTE")+'</option>').join("");
+  if(s.workspaces.some(w=>w.id===currentWorkspace)) $("workspace").value=currentWorkspace;
+
   renderModels(s.models||[]);
+  renderEfforts(s.reasoning_efforts||[]);
+  renderRecipes(s.recipes||[]);
   renderAgents(s.agents||[],s.sessions||[]);
+  renderSmartMemory(s.smart||{});
 
   const aw=$("auth-warning");
   if (!s.codex.installed || !s.codex.authenticated || s.codex.billing_mode==="api") {
@@ -112,7 +238,7 @@ function renderStatus(s) {
       ? "Codex CLI non risulta installato. Esegui jarvis login sul Debian."
       : (!s.codex.authenticated
         ? "Codex è installato ma il login non risulta attivo. Esegui jarvis login."
-        : "ATTENZIONE: Codex risulta autenticato con API key. Questo può usare fatturazione API separata. Esegui jarvis login per passare a ChatGPT.");
+        : "ATTENZIONE: Codex risulta autenticato con API key. Questo può usare fatturazione API separata.");
   } else {
     aw.classList.add("hidden");
   }
@@ -154,7 +280,12 @@ async function refresh() {
 }
 async function createSession() {
   try {
-    const body={name:$("session-name").value.trim(),workspace_id:$("workspace").value,model:$("model").value};
+    const body={
+      name:$("session-name").value.trim(),
+      workspace_id:$("workspace").value,
+      model:$("model").value,
+      effort:$("effort").value
+    };
     const r=await api("/api/sessions",{method:"POST",body:JSON.stringify(body)});
     state.active=r.name;
     await refresh();
@@ -231,17 +362,37 @@ async function stopSession(name) {
 $("refresh").onclick=refresh;
 $("create").onclick=createSession;
 $("model").onchange=updateModelNote;
+$("effort").onchange=updateModelNote;
+$("load-recipe").onclick=loadRecipe;
+$("analyze-task").onclick=analyzeTask;
+$("smart-launch").onclick=smartLaunch;
+$("smart-task").oninput=()=>{ state.route=null; };
 $("toggle-new-agent").onclick=()=>$("new-agent-form").classList.toggle("hidden");
 $("create-agent").onclick=createAgent;
 $("agent-detail-close").onclick=()=>$("agent-detail-panel").classList.add("hidden");
-$("agent-detail-copy").onclick=()=>copyText($("agent-detail-text").textContent,()=>{$("agent-detail-copy").textContent="Copiato";setTimeout(()=>$("agent-detail-copy").textContent="Copia istruzioni",1200);});
+$("agent-detail-copy").onclick=()=>copyText($("agent-detail-text").textContent,()=>{
+  $("agent-detail-copy").textContent="Copiato";
+  setTimeout(()=>$("agent-detail-copy").textContent="Copia istruzioni",1200);
+});
 $("usage-refresh").onclick=readUsage;
-$("usage-copy").onclick=()=>copyText($("usage-output").textContent,()=>{$("usage-copy").textContent="Copiato";setTimeout(()=>$("usage-copy").textContent="Copia",1200);});
-$("copy-log").onclick=()=>copyText($("screen").textContent,()=>{$("copy-log").textContent="Copiato";setTimeout(()=>$("copy-log").textContent="Copia log",1200);});
+$("usage-copy").onclick=()=>copyText($("usage-output").textContent,()=>{
+  $("usage-copy").textContent="Copiato";
+  setTimeout(()=>$("usage-copy").textContent="Copia",1200);
+});
+$("copy-log").onclick=()=>copyText($("screen").textContent,()=>{
+  $("copy-log").textContent="Copiato";
+  setTimeout(()=>$("copy-log").textContent="Copia log",1200);
+});
 $("refresh-log").onclick=updateScreen;
-$("log-session").onchange=()=>{state.active=$("log-session").value||null;$("terminal-title").textContent=state.active||"Nessuna sessione selezionata";updateScreen();};
+$("log-session").onchange=()=>{
+  state.active=$("log-session").value||null;
+  $("terminal-title").textContent=state.active||"Nessuna sessione selezionata";
+  updateScreen();
+};
 $("send").onclick=sendPrompt;
-$("prompt").addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="Enter")sendPrompt();});
+$("prompt").addEventListener("keydown",e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==="Enter") sendPrompt();
+});
 
 refresh().then(updateScreen);
 state.timer=setInterval(()=>{refresh();updateScreen();},3500);

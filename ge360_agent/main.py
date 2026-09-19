@@ -323,18 +323,9 @@ def chat_create_thread(body: ChatThreadRequest):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     suggested = _route_payload(route)
-    powerful_agents = {
-        "ge360_sysadmin",
-        "ge360_docker",
-        "ge360_n8n_engineer",
-        "ge360_automation",
-        "ge360_crm",
-    }
-    sandbox = (
-        "danger-full-access"
-        if route.primary_agent in powerful_agents or any(x in powerful_agents for x in route.collaborators)
-        else "workspace-write"
-    )
+    # Chat mode starts sandboxed. Codex can request an explicit approval card
+    # when a task needs permissions outside the workspace.
+    sandbox = "workspace-write"
 
     try:
         thread_id = app_server.create_thread(

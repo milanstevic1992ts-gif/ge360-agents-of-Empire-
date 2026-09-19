@@ -23,3 +23,5 @@
 .tiny-button{padding:5px 8px;font-size:11px}
 @media(max-width:900px){.smart-grid{grid-template-columns:1fr}.smart-actions>*{flex:1 1 160px}.model-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.activity-row{align-items:flex-start;flex-direction:column}.activity-feedback{width:100%}.model-grid{grid-template-columns:1fr}}
+
+.model-grid{grid-template-columns:.7fr 1.05fr 1fr .75fr auto}

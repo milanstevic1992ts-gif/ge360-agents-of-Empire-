@@ -1,0 +1,24 @@
+[server]
+host = "127.0.0.1"
+port = 8789
+session_prefix = "ge360-"
+# Per accesso remoto impostare un token forte tramite GE360_AGENT_TOKEN.
+# Non mettere password o token GitHub in questo file.
+
+[codex]
+command = "codex --search"
+
+[services]
+systemd_units = [
+  "ge360-backend",
+]
+
+[[workspaces]]
+id = "ge360"
+name = "GE360 /opt/ge360"
+path = "/opt/ge360"
+
+[[workspaces]]
+id = "home"
+name = "Home Jarvis"
+path = "/home/jarvis"

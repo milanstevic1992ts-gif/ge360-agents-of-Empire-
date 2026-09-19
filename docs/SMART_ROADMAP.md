@@ -33,6 +33,9 @@ Ricette riutilizzabili ispirate ai recipe system degli agent framework:
 - Repo Bugfix.
 
 ### Dashboard
+- chat JARVIS strutturata e streaming;
+- cronologia conversazioni;
+- card tool/approval;
 - modello + reasoning;
 - Smart Router;
 - playbook picker;
@@ -42,19 +45,28 @@ Ricette riutilizzabili ispirate ai recipe system degli agent framework:
 - uso Codex via /status;
 - memoria operativa e feedback.
 
-## Prossima fase: Codex App Server bridge
+## Codex App Server bridge · implementato in 0.7
 
-Non fare screen scraping per stabilire lo stato degli agenti.
+La chat principale non usa screen scraping.
 
-Usare gradualmente `codex app-server` come fonte strutturata per:
-- `model/list`: modelli disponibili realmente sull'account;
-- `thread/status/changed`: idle / active / error;
-- `turn/*`: stato del turno;
-- `item/*`: tool call, messaggi, progress;
-- subagent thread e handoff;
+`codex app-server` resta persistente dietro il backend GE360 e comunica via stdio JSON-RPC. Il browser riceve eventi strutturati tramite SSE.
+
+Usiamo già:
+- `thread/start` / `thread/resume`;
+- `thread/status/changed`;
+- `turn/start` / `turn/steer` / `turn/interrupt`;
+- `turn/completed`;
+- `item/agentMessage/delta`;
+- lifecycle `item/*` per tool, file change, MCP, web search e reasoning;
+- approval request per comandi e modifiche file;
+- request user input.
+
+tmux resta il fallback e il terminale interattivo per power user.
+
+Restano da integrare progressivamente:
+- `model/list` come sorgente dinamica dei modelli;
+- subagent thread/handoff più dettagliati;
 - token usage strutturato quando disponibile.
-
-tmux resta il fallback e il terminale interattivo.
 
 ## Dopo App Server
 

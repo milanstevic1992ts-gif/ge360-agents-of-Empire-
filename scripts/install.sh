@@ -59,7 +59,7 @@ GLOBAL_AGENTS="$RUN_HOME/.codex/AGENTS.md"
 echo "[OK] Policy GE360 sincronizzata in ~/.codex/AGENTS.md"
 
 "${AS_USER[@]}" python3 "$DEST/scripts/configure-codex.py"
-echo "[OK] 6 subagenti GE360 installati + memoria Codex abilitata."
+echo "[OK] Subagenti GE360 sincronizzati + memoria Codex abilitata."
 
 if ! "${AS_USER[@]}" bash -lc 'export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"; command -v codex >/dev/null 2>&1'; then
   echo "[GE360] Installazione Codex CLI ufficiale..."

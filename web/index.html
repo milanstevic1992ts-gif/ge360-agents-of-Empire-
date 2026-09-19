@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#090d14">
+  <title>JARVIS · GE360</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">GE360 · DEBIAN CONTROL CENTER</div>
+      <h1>JARVIS</h1>
+    </div>
+    <div id="overall" class="status-pill">CONNESSIONE…</div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="hero-kicker">SUPER TERMINALE</p>
+        <h2>Descrivi il problema.<br><span>Codex lavora sul server.</span></h2>
+        <p class="muted">Sessioni persistenti, diagnostica Debian, Docker e servizi GE360 in un'unica interfaccia.</p>
+      </div>
+      <button id="refresh" class="ghost">Aggiorna stato</button>
+    </section>
+
+    <section id="metrics" class="metrics"></section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="eyebrow">NUOVO AGENTE</div>
+          <h3>Avvia una sessione Codex</h3>
+        </div>
+      </div>
+      <div class="create-grid">
+        <input id="session-name" value="jarvis" maxlength="40" placeholder="Nome sessione">
+        <select id="workspace"></select>
+        <button id="create" class="primary">Avvia Codex</button>
+      </div>
+      <div id="auth-warning" class="notice hidden"></div>
+    </section>
+
+    <section class="split">
+      <div class="panel">
+        <div class="panel-head"><div><div class="eyebrow">AGENTI</div><h3>Sessioni attive</h3></div></div>
+        <div id="sessions" class="session-list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div><div class="eyebrow">SERVIZI</div><h3>Debian + Docker</h3></div></div>
+        <div id="services"></div>
+      </div>
+    </section>
+
+    <section id="terminal-panel" class="panel terminal-panel hidden">
+      <div class="panel-head">
+        <div><div class="eyebrow">TERMINALE CODEX</div><h3 id="terminal-title">Sessione</h3></div>
+        <button id="close-terminal" class="ghost small">Chiudi vista</button>
+      </div>
+      <pre id="screen" class="terminal">Seleziona una sessione.</pre>
+      <div class="prompt-box">
+        <textarea id="prompt" rows="3" placeholder="Esempio: Mautic non si apre. Trova il problema, fai backup prima di modificare e verifica alla fine."></textarea>
+        <button id="send" class="primary">Invia a JARVIS</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>GE360 Agent Control Center · locale per impostazione predefinita</footer>
+  <script src="/assets/app.js"></script>
+</body>
+</html>

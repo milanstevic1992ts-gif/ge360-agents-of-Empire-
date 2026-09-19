@@ -34,6 +34,9 @@ printf '%s\n' "$SOURCE" | "${SUDO[@]}" tee /etc/ge360-agent/source_path >/dev/nu
 "${SUDO[@]}" rsync -a --delete --exclude '.git/' --exclude '.venv/' --exclude 'runtime/' "$SOURCE/" "$DEST/"
 "${SUDO[@]}" chown -R "$RUN_USER:$RUN_GROUP" "$DEST"
 
+"${AS_USER[@]}" mkdir -p "$DEST/runtime"
+"${AS_USER[@]}" python3 "$DEST/scripts/migrate.py"
+
 if [ ! -f /etc/ge360-agent/config.toml ]; then
   tmp="$(mktemp)"
   sed "s|/home/jarvis|$RUN_HOME|g" "$DEST/config/ge360.toml" > "$tmp"
@@ -80,6 +83,7 @@ echo
 echo "======================================"
 echo " INSTALLAZIONE COMPLETATA"
 echo "======================================"
+echo "Versione: $(cat "$DEST/VERSION" 2>/dev/null || echo sconosciuta)"
 echo "Dashboard: http://127.0.0.1:8789"
 echo "Super terminale: jarvis"
 echo "Subagenti: jarvis agents"

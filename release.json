@@ -1,7 +1,7 @@
 {
-  "version": "0.6.1",
-  "schema_version": 2,
+  "version": "0.7.0",
+  "schema_version": 3,
   "channel": "stable",
   "min_python": "3.11",
-  "notes": "Persistent Codex ChatGPT login for Debian/systemd using file credential storage."
-}
+  "notes": "Structured JARVIS chat powered by persistent Codex App Server streaming, tool cards and approvals."
+}\n

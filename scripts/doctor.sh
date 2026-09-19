@@ -30,7 +30,7 @@ else
 fi
 
 if [ -x "$ROOT/.venv/bin/python" ]; then
-  if "$ROOT/.venv/bin/python" -c 'import fastapi, uvicorn, ge360_agent.main' >/dev/null 2>&1; then
+  if (cd "$ROOT" && "$ROOT/.venv/bin/python" -c 'import fastapi, uvicorn, ge360_agent.main') >/dev/null 2>&1; then
     ok "Backend Python importabile"
   else
     fail "Backend Python non importabile"

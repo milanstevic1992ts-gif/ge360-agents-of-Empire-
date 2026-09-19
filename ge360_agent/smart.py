@@ -70,6 +70,11 @@ COMPLEX = {
     "sicurezza", "security", "race condition", "refactor", "multi-agent", "multi agent",
     "database", "schema", "concorrenza", "concurrency",
 }
+STOPWORDS = {
+    "della", "delle", "degli", "dello", "alla", "alle", "sono", "come", "quando", "dopo",
+    "prima", "questo", "questa", "quello", "quella", "fare", "fatto", "with", "from", "this",
+    "that", "into", "have", "want", "controlla", "verifica", "problema", "sistema",
+}
 
 _SECRET_PATTERNS = [
     re.compile(r"(?i)(password|passwd|token|api[_ -]?key|secret)\s*[:=]\s*\S+"),
@@ -92,7 +97,69 @@ def _tokens(text: str) -> str:
     return " " + re.sub(r"\s+", " ", text.lower()).strip() + " "
 
 
-def _score_agent(text: str, agent_id: str, description: str = "") -> int:
+def _wordset(text: str) -> set[str]:
+    return {
+        word
+        for word in re.findall(r"[a-z0-9_-]{4,}", text.lower())
+        if word not in STOPWORDS
+    }
+
+
+def _db() -> sqlite3.Connection:
+    RUNTIME.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(RUNTIME / "jarvis-smart.sqlite3")
+    conn.row_factory = sqlite3.Row
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS task_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL,
+            session TEXT NOT NULL,
+            task_preview TEXT NOT NULL,
+            primary_agent TEXT NOT NULL,
+            collaborators TEXT NOT NULL,
+            model TEXT NOT NULL,
+            risk TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'launched',
+            rating INTEGER
+        )
+        """
+    )
+    conn.commit()
+    return conn
+
+
+def _experience_bonus(task: str, agent_id: str) -> int:
+    current = _wordset(task)
+    if not current:
+        return 0
+
+    with _db() as conn:
+        rows = conn.execute(
+            """
+            SELECT task_preview, rating
+            FROM task_events
+            WHERE primary_agent=? AND rating IS NOT NULL
+            ORDER BY id DESC LIMIT 80
+            """,
+            (agent_id,),
+        ).fetchall()
+
+    score = 0
+    for row in rows:
+        previous = _wordset(str(row["task_preview"]))
+        if not previous:
+            continue
+        common = len(current & previous)
+        union = len(current | previous)
+        similarity = common / union if union else 0.0
+        if common >= 2 and similarity >= 0.12:
+            score += 2 if int(row["rating"]) > 0 else -1
+
+    return max(-2, min(3, score))
+
+
+def _score_agent(text: str, agent_id: str, description: str = "") -> tuple[int, int]:
     haystack = _tokens(text)
     config = KNOWN_AGENTS.get(agent_id)
     score = 0
@@ -104,7 +171,9 @@ def _score_agent(text: str, agent_id: str, description: str = "") -> int:
     for word in re.findall(r"[a-z0-9_-]{4,}", description.lower()):
         if word in haystack:
             score += 1
-    return score
+
+    experience = _experience_bonus(text, agent_id)
+    return score + experience, experience
 
 
 def route_task(task: str, agents: list[dict]) -> Route:
@@ -113,11 +182,18 @@ def route_task(task: str, agents: list[dict]) -> Route:
         raise ValueError("Descrivi prima il lavoro da eseguire")
 
     scores: dict[str, int] = {}
+    experience: dict[str, int] = {}
     for agent in agents:
         agent_id = str(agent.get("id", ""))
         if not agent_id:
             continue
-        scores[agent_id] = _score_agent(clean, agent_id, str(agent.get("description", "")))
+        total, memory_bonus = _score_agent(
+            clean,
+            agent_id,
+            str(agent.get("description", "")),
+        )
+        scores[agent_id] = total
+        experience[agent_id] = memory_bonus
 
     ranked = sorted(scores.items(), key=lambda item: (-item[1], item[0]))
     primary = ranked[0][0] if ranked and ranked[0][1] > 0 else "ge360_developer"
@@ -143,6 +219,10 @@ def route_task(task: str, agents: list[dict]) -> Route:
 
     label = KNOWN_AGENTS.get(primary, {}).get("label", primary)
     reason_bits = [f"{label} è il profilo con più segnali pertinenti"]
+    if experience.get(primary, 0) > 0:
+        reason_bits.append("esperienze simili concluse bene rafforzano questa scelta")
+    elif experience.get(primary, 0) < 0:
+        reason_bits.append("la memoria segnala precedenti da migliorare, quindi il vantaggio è ridotto")
     if collaborators:
         reason_bits.append("il lavoro tocca più domini, quindi conviene una delega mirata")
     if risk != "low":
@@ -188,34 +268,17 @@ def list_recipes() -> list[dict]:
     return result
 
 
-def _db() -> sqlite3.Connection:
-    RUNTIME.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(RUNTIME / "jarvis-smart.sqlite3")
-    conn.row_factory = sqlite3.Row
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS task_events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            created_at TEXT NOT NULL,
-            session TEXT NOT NULL,
-            task_preview TEXT NOT NULL,
-            primary_agent TEXT NOT NULL,
-            collaborators TEXT NOT NULL,
-            model TEXT NOT NULL,
-            risk TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'launched',
-            rating INTEGER
-        )
-        """
-    )
-    conn.commit()
-    return conn
-
-
 def safe_preview(task: str, limit: int = 180) -> str:
     text = re.sub(r"\s+", " ", task).strip()
     for pattern in _SECRET_PATTERNS:
-        text = pattern.sub(lambda m: m.group(1) + "=[REDACTED]" if m.lastindex else "[REDACTED]", text)
+        text = pattern.sub(
+            lambda match: (
+                match.group(1) + "=[REDACTED]"
+                if match.lastindex
+                else "[REDACTED]"
+            ),
+            text,
+        )
     return text[:limit]
 
 
@@ -297,6 +360,6 @@ def build_delegation_prompt(task: str, route: Route) -> str:
         f"Livello di rischio: {route.risk}. "
         "Usa i subagenti nativi Codex quando utile, mantieni tu la responsabilità del risultato finale, "
         "segui i gate di sicurezza GE360 e verifica il risultato. "
-        "Non memorizzare password, token o segreti.\\n\\n"
-        f"INCARICO UTENTE:\\n{task.strip()}"
+        "Non memorizzare password, token o segreti.\n\n"
+        f"INCARICO UTENTE:\n{task.strip()}"
     )

@@ -5,8 +5,7 @@
 Clona la repository con il tuo normale accesso GitHub e poi esegui:
 
     cd ge360-agents-of-Empire-
-    chmod +x scripts/install.sh
-    ./scripts/install.sh
+    bash scripts/install.sh
 
 L'installer:
 - installa dipendenze Debian leggere;

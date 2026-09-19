@@ -48,18 +48,20 @@ function renderStatus(s) {
     metric("CPU / LOAD", sys.cpu_count+" core · "+sys.load[0]) +
     metric("RAM", bytes(mem.used)+" / "+bytes(mem.total)) +
     metric("DISCO", pct(disk.used,disk.total)+"% usato") +
-    metric("CODEX", s.codex.installed ? (s.codex.authenticated ? "LOGIN OK" : "LOGIN RICHIESTO") : "NON INSTALLATO");
+    metric("CODEX", s.codex.installed ? (s.codex.authenticated ? (s.codex.billing_mode==="api" ? "API KEY ⚠" : (s.codex.billing_mode==="chatgpt" ? "CHATGPT" : "LOGIN OK")) : "LOGIN RICHIESTO") : "NON INSTALLATO");
 
   $("workspace").innerHTML = s.workspaces.map(function(w) {
     return '<option value="'+safe(w.id)+'">'+safe(w.name)+(w.exists?"":" · MANCANTE")+'</option>';
   }).join("");
 
   const aw=$("auth-warning");
-  if (!s.codex.installed || !s.codex.authenticated) {
+  if (!s.codex.installed || !s.codex.authenticated || s.codex.billing_mode==="api") {
     aw.classList.remove("hidden");
     aw.textContent = !s.codex.installed
-      ? "Codex CLI non risulta installato. Esegui scripts/codex-login.sh sul Debian."
-      : "Codex è installato ma il login non risulta attivo. Esegui codex e scegli Sign in with ChatGPT.";
+      ? "Codex CLI non risulta installato. Esegui jarvis login sul Debian."
+      : (!s.codex.authenticated
+        ? "Codex è installato ma il login non risulta attivo. Esegui jarvis login."
+        : "ATTENZIONE: Codex risulta autenticato con API key. Questo può usare fatturazione API separata. Esegui jarvis login per passare a ChatGPT.");
   } else {
     aw.classList.add("hidden");
   }

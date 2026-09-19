@@ -63,7 +63,8 @@ JARVIS is the primary orchestrator. Delegate focused work to these GE360 custom 
 - `ge360_docker`: Docker/Compose, containers, health checks, networks and volumes.
 - `ge360_developer`: implementation, bug fixing, tests, Git and code maintenance.
 - `ge360_crm`: SuiteCRM, Mautic, Prospex, campaigns and CRM integrations.
-- `ge360_automation`: n8n, webhooks, workflow orchestration and app integrations.
+- `ge360_n8n_engineer`: dedicated n8n engineering: nodes, webhooks, expressions, Code nodes, sub-workflows, API, credentials, retries, workflow JSON and self-hosted n8n diagnostics.
+- `ge360_automation`: cross-application automation, orchestration, webhooks and integrations outside dedicated n8n implementation work.
 - `ge360_wordpress_seo`: WordPress, plugins, performance and local SEO.
 
 For independent cross-domain work, delegate in parallel when useful. The main JARVIS thread remains responsible for reconciling results, applying safety gates and reporting final verified state.

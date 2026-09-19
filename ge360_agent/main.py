@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 import shlex
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -26,6 +26,7 @@ from .smart import (
     route_task,
 )
 from .tmux import TmuxError, TmuxManager
+from .uploads import attachment_context, list_files, resolve_files, save_upload
 from .versioning import release_info, git_commit
 
 
@@ -103,6 +104,7 @@ class NewAgent(BaseModel):
 
 class SmartRouteRequest(BaseModel):
     task: str = Field(min_length=3, max_length=12000)
+    attachments: list[str] = Field(default_factory=list)
 
 
 class SmartLaunchRequest(BaseModel):
@@ -111,6 +113,7 @@ class SmartLaunchRequest(BaseModel):
     name: str = Field(default="", max_length=40)
     model: str = ""
     effort: str = ""
+    attachments: list[str] = Field(default_factory=list)
 
 
 class FeedbackRequest(BaseModel):
@@ -172,6 +175,13 @@ def _agents_payload():
             "status_source": event.get("source", "ge360"),
         })
     return payload
+
+
+def _route_text(task: str, files: list[dict]) -> str:
+    if not files:
+        return task
+    names = ", ".join(item["original_name"] for item in files)
+    return f"{task}\n\nALLEGATI: {names}"
 
 
 def _route_payload(route):
@@ -271,11 +281,30 @@ def add_agent(body: NewAgent):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.get("/api/files", dependencies=[Depends(guard)])
+def files_index(limit: int = 100):
+    return {"files": list_files(limit)}
+
+
+@app.post("/api/files", dependencies=[Depends(guard)])
+async def files_upload(files: list[UploadFile] = File(...)):
+    if not files:
+        raise HTTPException(status_code=400, detail="Nessun file ricevuto")
+    saved = []
+    try:
+        for upload in files[:20]:
+            saved.append(await save_upload(upload))
+        return {"ok": True, "files": saved}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @app.post("/api/smart/route", dependencies=[Depends(guard)])
 def smart_route(body: SmartRouteRequest):
+    files = resolve_files(body.attachments)
     try:
-        route = route_task(body.task, _agents_payload())
-        return {"ok": True, "route": _route_payload(route)}
+        route = route_task(_route_text(body.task, files), _agents_payload())
+        return {"ok": True, "route": _route_payload(route), "attachments": files}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -283,8 +312,9 @@ def smart_route(body: SmartRouteRequest):
 @app.post("/api/smart/launch", dependencies=[Depends(guard)])
 def smart_launch(body: SmartLaunchRequest):
     ws = _workspace(body.workspace_id)
+    files = resolve_files(body.attachments)
     try:
-        route = route_task(body.task, _agents_payload())
+        route = route_task(_route_text(body.task, files), _agents_payload())
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -300,8 +330,12 @@ def smart_launch(body: SmartLaunchRequest):
         record_activity(name, route.primary_agent, "working", "delegated", "Agente principale selezionato dal router", "ge360")
         for collaborator in route.collaborators:
             record_activity(name, collaborator, "waiting", "queued", "Collaboratore pronto se richiesto", "ge360")
-        tmux.send(name, build_delegation_prompt(body.task, route))
-        event_id = remember_launch(name, body.task, route)
+        prompt = build_delegation_prompt(body.task, route)
+        file_context = attachment_context(files)
+        if file_context:
+            prompt = prompt + "\n\n" + file_context
+        tmux.send(name, prompt)
+        event_id = remember_launch(name, _route_text(body.task, files), route)
         return {
             "ok": True,
             "name": name,
@@ -309,6 +343,7 @@ def smart_launch(body: SmartLaunchRequest):
             "effort": effort,
             "event_id": event_id,
             "route": suggested,
+            "attachments": files,
         }
     except (TmuxError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

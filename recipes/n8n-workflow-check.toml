@@ -1,8 +1,8 @@
 name = "n8n Workflow Check"
-description = "Controllo di trigger, webhook, retry, errori e duplicati nei workflow."
-agent = "ge360_automation"
+description = "Diagnosi tecnica completa di workflow n8n: trigger, nodi, espressioni, webhook, credenziali, retry, errori, duplicati ed esecuzioni."
+agent = "ge360_n8n_engineer"
 model = "gpt-5.6-luna"
 risk = "low"
 prompt = """
-Analizza il workflow n8n indicato. Controlla trigger, payload, credenziali come riferimenti sicuri, retry, rami di errore e prevenzione duplicati. Non stampare segreti. Proponi o applica la modifica minima e verifica il flusso.
+Agisci come n8n Engineer. Analizza il workflow indicato partendo dall'esecuzione o dal workflow JSON reale. Individua il primo nodo che fallisce, verifica input/output, espressioni, credenziali come riferimenti sicuri, webhook test/production, retry, error handling e prevenzione duplicati. Non stampare segreti. Fai un checkpoint/export prima di modificare, applica la patch minima e verifica almeno il percorso principale e il percorso d'errore rilevante.
 """

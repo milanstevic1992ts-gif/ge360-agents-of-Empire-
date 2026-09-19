@@ -7,7 +7,7 @@ Un super-terminale leggero per Debian che usa **OpenAI Codex CLI** come agente o
 - stato di sistema, Docker e servizi systemd;
 - skill GE360 per diagnosi, recovery, deploy e backup;
 - regole di sicurezza per evitare operazioni distruttive automatiche;
-- autenticazione Codex riutilizzata dall'utente Linux che esegue il servizio.
+- autenticazione Codex riutilizzata dall'utente Linux che esegue il servizio;\n- 6 subagenti Codex specializzati e memoria locale;\n- selezione modello Codex dalla dashboard (Luna/Terra/Sol);\n- pannello consumo basato sull'output reale di `/status`;\n- log live copiabile e creazione di nuovi agenti dalla UI.
 
 ## Filosofia
 

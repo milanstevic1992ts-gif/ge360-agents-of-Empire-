@@ -111,3 +111,24 @@ def timeline(limit: int = 80, session: str = "") -> list[dict]:
         return []
     finally:
         conn.close()
+
+
+def agents_for_session(session: str) -> list[str]:
+    if not DB.exists():
+        return []
+    conn = sqlite3.connect(DB)
+    try:
+        rows = conn.execute(
+            """
+            SELECT DISTINCT agent_id
+            FROM agent_activity
+            WHERE session=?
+            ORDER BY agent_id
+            """,
+            (session,),
+        ).fetchall()
+        return [str(row[0]) for row in rows]
+    except sqlite3.OperationalError:
+        return []
+    finally:
+        conn.close()

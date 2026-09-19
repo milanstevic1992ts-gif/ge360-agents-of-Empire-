@@ -1,7 +1,7 @@
 {
-  "version": "0.6.0",
+  "version": "0.6.1",
   "schema_version": 2,
   "channel": "stable",
   "min_python": "3.11",
-  "notes": "Data Intake Engineer, persistent CSV/XLSX attachments and Smart Router file handoff."
-}
+  "notes": "Persistent Codex ChatGPT login for Debian/systemd using file credential storage."
+}\n

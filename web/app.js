@@ -59,6 +59,28 @@ function routeBadge(label,value,cls="") {
   return '<span class="route-badge '+safe(cls)+'"><b>'+safe(label)+'</b> '+safe(value)+'</span>';
 }
 
+const AGENT_VISUALS = {
+  ge360_sysadmin: {name:"SysAdmin", badge:"SYS", role:"DEBIAN / SYSTEMD", cls:"sys"},
+  ge360_docker: {name:"Docker Engineer", badge:"DKR", role:"DOCKER / COMPOSE", cls:"docker"},
+  ge360_developer: {name:"Developer", badge:"DEV", role:"CODICE / GIT / TEST", cls:"dev"},
+  ge360_crm: {name:"CRM Engineer", badge:"CRM", role:"SUITECRM / MAUTIC", cls:"crm"},
+  ge360_n8n_engineer: {name:"n8n Engineer", badge:"n8n", role:"N8N SPECIALIST", cls:"n8n"},
+  ge360_automation: {name:"Automation", badge:"AUT", role:"INTEGRAZIONI / FLOW", cls:"automation"},
+  ge360_wordpress_seo: {name:"WordPress / SEO", badge:"WP", role:"WORDPRESS / SEO", cls:"wp"}
+};
+function agentVisual(id, fallback="") {
+  return AGENT_VISUALS[id] || {
+    name: fallback || id || "Agente",
+    badge: (id || "AI").replace("ge360_","").slice(0,3).toUpperCase(),
+    role: "SUBAGENTE CODEX",
+    cls: "custom"
+  };
+}
+function agentDisplayName(id) {
+  const found=state.agents.find(a=>a.id===id);
+  return agentVisual(id, found?.name).name;
+}
+
 function renderModels(models) {
   const select=$("model");
   const old=select.value || "gpt-5.6-luna";
@@ -109,10 +131,12 @@ function loadRecipe() {
 }
 function renderRoute(route) {
   state.route=route;
-  const collaborators=(route.collaborators||[]).length ? route.collaborators.join(", ") : "nessuno";
-  $("route-primary").textContent="Agente principale: "+route.primary_agent;
+  $("route-primary").textContent="Agente principale: "+agentDisplayName(route.primary_agent);
+  const collaboratorNames=(route.collaborators||[]).length
+    ? route.collaborators.map(agentDisplayName).join(", ")
+    : "nessuno";
   $("route-details").innerHTML=
-    routeBadge("Collaboratori",collaborators)+
+    routeBadge("Collaboratori",collaboratorNames)+
     routeBadge("Modello",route.model)+
     routeBadge("Reasoning",route.effort)+
     routeBadge("Rischio",route.risk,route.risk);
@@ -121,23 +145,31 @@ function renderRoute(route) {
 }
 async function analyzeTask() {
   const task=$("smart-task").value.trim();
-  if(!task) return alert("Descrivi prima il lavoro.");
+  if(!task) {
+    alert("Descrivi prima il lavoro.");
+    return null;
+  }
   $("route-primary").textContent="Analisi locale…";
   $("route-details").innerHTML="";
   $("route-reason").textContent="";
   try {
     const r=await api("/api/smart/route",{method:"POST",body:JSON.stringify({task})});
     renderRoute(r.route);
+    return r.route;
   } catch(e) {
     $("route-primary").textContent="Errore";
     $("route-reason").textContent=e.message;
+    return null;
   }
 }
 async function smartLaunch() {
   const task=$("smart-task").value.trim();
   if(!task) return alert("Descrivi prima il lavoro.");
   try {
-    if(!state.route) await analyzeTask();
+    if(!state.route) {
+      const analyzed=await analyzeTask();
+      if(!analyzed) return;
+    }
     const body={
       task,
       workspace_id:$("workspace").value,
@@ -155,17 +187,38 @@ async function smartLaunch() {
 function renderAgents(agents, sessions) {
   state.agents=agents||[];
   const jarvisActive=sessions.length>0;
+  const query=($("agent-search")?.value||"").trim().toLowerCase();
+  if ($("agent-count")) {
+    $("agent-count").textContent=state.agents.length+" agenti + JARVIS";
+  }
+
   const master='<article class="agent-card master">'+
-    '<div class="agent-top"><div><div class="agent-name">JARVIS</div><div class="agent-role">ORCHESTRATORE CODEX</div></div>'+
+    '<div class="agent-top"><div class="agent-identity"><div class="agent-avatar jarvis-avatar">J</div><div><div class="agent-name">JARVIS</div><div class="agent-role">ORCHESTRATORE CODEX</div></div></div>'+
     '<span class="agent-status '+(jarvisActive?'active':'ready')+'">'+(jarvisActive?'ATTIVO':'PRONTO')+'</span></div>'+
     '<p>Coordina, instrada il lavoro, sceglie i subagenti e raccoglie il risultato finale.</p>'+
-    '<div class="agent-footer"><span>'+(sessions.length? sessions.length+' sessione/i':'nessuna sessione')+'</span></div></article>';
+    '<div class="agent-footer"><span>'+(sessions.length? sessions.length+' sessione/i':'nessuna sessione')+'</span><span class="agent-id">master</span></div></article>';
 
-  const cards=state.agents.map((a,i)=>'<article class="agent-card">'+
-    '<div class="agent-top"><div><div class="agent-name">'+safe(a.name)+'</div><div class="agent-role">SUBAGENTE CODEX</div></div><span class="agent-status ready">PRONTO</span></div>'+
-    '<p>'+safe(a.description||'Agente specializzato GE360')+'</p>'+
-    '<div class="agent-footer"><button class="ghost small" data-agent-detail="'+i+'">Dettagli</button><span>'+safe(a.id)+'</span></div></article>').join('');
-  $("agents").innerHTML=master+cards;
+  const visible=state.agents
+    .map((a,i)=>({a,i}))
+    .filter(({a})=>{
+      if(!query) return true;
+      const v=agentVisual(a.id,a.name);
+      return [a.id,a.name,a.description,v.name,v.role].join(" ").toLowerCase().includes(query);
+    });
+
+  const cards=visible.map(({a,i})=>{
+    const v=agentVisual(a.id,a.name);
+    return '<article class="agent-card agent-'+safe(v.cls)+'">'+
+      '<div class="agent-top"><div class="agent-identity"><div class="agent-avatar">'+safe(v.badge)+'</div><div><div class="agent-name">'+safe(v.name)+'</div><div class="agent-role">'+safe(v.role)+'</div></div></div><span class="agent-status ready">PRONTO</span></div>'+
+      '<p>'+safe(a.description||'Agente specializzato GE360')+'</p>'+
+      '<div class="agent-footer"><button class="ghost small" data-agent-detail="'+i+'">Dettagli</button><span class="agent-id">'+safe(a.id)+'</span></div></article>';
+  }).join('');
+
+  const empty=query && !visible.length
+    ? '<div class="agent-empty">Nessun agente corrisponde a “'+safe(query)+'”.</div>'
+    : '';
+
+  $("agents").innerHTML=master+cards+empty;
   document.querySelectorAll("[data-agent-detail]").forEach(btn=>{
     btn.onclick=()=>showAgentDetail(Number(btn.getAttribute("data-agent-detail")));
   });
@@ -368,6 +421,7 @@ $("analyze-task").onclick=analyzeTask;
 $("smart-launch").onclick=smartLaunch;
 $("smart-task").oninput=()=>{ state.route=null; };
 $("toggle-new-agent").onclick=()=>$("new-agent-form").classList.toggle("hidden");
+$("agent-search").oninput=()=>renderAgents(state.agents,state.status?.sessions||[]);
 $("create-agent").onclick=createAgent;
 $("agent-detail-close").onclick=()=>$("agent-detail-panel").classList.add("hidden");
 $("agent-detail-copy").onclick=()=>copyText($("agent-detail-text").textContent,()=>{

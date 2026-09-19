@@ -10,7 +10,8 @@ AGENTS = [
     {"id": "ge360_docker", "description": "Docker Compose containers"},
     {"id": "ge360_developer", "description": "Code Git tests"},
     {"id": "ge360_crm", "description": "SuiteCRM Mautic Prospex"},
-    {"id": "ge360_automation", "description": "n8n workflow webhook"},
+    {"id": "ge360_n8n_engineer", "description": "n8n workflows webhooks nodes expressions API"},
+    {"id": "ge360_automation", "description": "workflow webhook automation integrations"},
     {"id": "ge360_wordpress_seo", "description": "WordPress SEO"},
 ]
 
@@ -33,6 +34,14 @@ class SmartRouterTests(unittest.TestCase):
         self.assertEqual(route.primary_agent, "ge360_crm")
         self.assertIn("ge360_docker", route.collaborators)
         self.assertIn(route.model, {"gpt-5.6-terra", "gpt-5.6-sol"})
+
+    def test_routes_n8n_to_dedicated_engineer(self):
+        route = smart.route_task(
+            "n8n: crea un workflow con Webhook node, sub-workflow, retry e gestione errori via n8n API.",
+            AGENTS,
+        )
+        self.assertEqual(route.primary_agent, "ge360_n8n_engineer")
+        self.assertIn("ge360_automation", route.collaborators)
 
     def test_simple_systemd_uses_luna(self):
         route = smart.route_task(

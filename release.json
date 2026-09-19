@@ -1,7 +1,7 @@
 {
-  "version": "0.5.0",
-  "schema_version": 1,
+  "version": "0.6.0",
+  "schema_version": 2,
   "channel": "stable",
   "min_python": "3.11",
-  "notes": "Versioned updates, migrations, backup/rollback foundation and structured agent activity."
+  "notes": "Data Intake Engineer, persistent CSV/XLSX attachments and Smart Router file handoff."
 }

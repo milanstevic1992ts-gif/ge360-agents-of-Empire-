@@ -1,0 +1,8 @@
+name = "Data Intake · Pulisci contatti"
+description = "Analizza e normalizza un CSV/XLSX di contatti, deduplica in modo trasparente e prepara l'import CRM."
+agent = "ge360_data_intake"
+model = "gpt-5.6-luna"
+risk = "low"
+prompt = """
+Analizza il file allegato come Data Intake Engineer. Non modificare l'originale. Identifica struttura, colonne e problemi qualità; mappa i campi nel formato GE360, normalizza valori sicuri, individua duplicati esatti e probabili, crea un file pulito separato e un report con conteggi. Non inventare dati mancanti e non stampare l'intero dataset nei log. Se il file è destinato a SuiteCRM/Mautic/Prospex, prepara anche il mapping di importazione e coinvolgi CRM Engineer; se serve automazione, coinvolgi n8n Engineer.
+"""

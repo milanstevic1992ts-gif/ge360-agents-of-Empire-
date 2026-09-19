@@ -4,4 +4,4 @@
   "channel": "stable",
   "min_python": "3.11",
   "notes": "Persistent Codex ChatGPT login for Debian/systemd using file credential storage."
-}\n
+}

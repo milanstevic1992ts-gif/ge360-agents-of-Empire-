@@ -50,8 +50,37 @@ if old.strip():
     try:
         tomllib.loads(old)
     except tomllib.TOMLDecodeError as exc:
-        raise SystemExit(f"[FAIL] config.toml non valido: {exc}. Ripristina un backup valido prima di continuare.")
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        broken = path.with_name(f"config.toml.corrotto-ge360-{stamp}")
+        shutil.copy2(path, broken)
+        print(f"[WARN] config.toml non valido: {exc}")
+        print(f"[OK] Copia del file corrotto salvata in: {broken}")
 
+        candidates = sorted(
+            list(codex_home.glob("config.toml.backup-ge360-*")) +
+            ([codex_home / "config.toml.save"] if (codex_home / "config.toml.save").exists() else []),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        recovered = ""
+        recovered_from = None
+        for candidate in candidates:
+            try:
+                candidate_text = candidate.read_text(encoding="utf-8")
+                tomllib.loads(candidate_text)
+                recovered = candidate_text
+                recovered_from = candidate
+                break
+            except Exception:
+                continue
+
+        if recovered_from:
+            old = recovered
+            print(f"[OK] Ripristino automatico da backup valido: {recovered_from}")
+        else:
+            old = ""
+            print("[WARN] Nessun backup TOML valido trovato: ricreo una configurazione Codex minima.")
+            
 new = upsert_root(old, "cli_auth_credentials_store", '"file"')
 new = upsert(new, "features", "memories", "true")
 new = upsert(new, "agents", "max_concurrent_threads_per_session", "6")
@@ -66,6 +95,10 @@ if new != old:
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         shutil.copy2(path, path.with_name(f"config.toml.backup-ge360-{stamp}"))
     path.write_text(new.rstrip() + "\n", encoding="utf-8")
+    try:
+        path.chmod(0o600)
+    except OSError:
+        pass
     print(f"[OK] Configurazione Codex aggiornata: {path}")
 else:
     print(f"[OK] Configurazione Codex già pronta: {path}")

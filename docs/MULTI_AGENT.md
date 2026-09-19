@@ -2,7 +2,7 @@
 
 JARVIS GE360 usa i subagenti personalizzati nativi di Codex.
 
-Il thread principale `jarvis` è l'orchestratore. I sette profili iniziali sono `ge360_sysadmin`, `ge360_docker`, `ge360_developer`, `ge360_crm`, `ge360_n8n_engineer`, `ge360_automation` e `ge360_wordpress_seo`.
+Il thread principale `jarvis` è l'orchestratore. Gli otto profili iniziali sono `ge360_sysadmin`, `ge360_docker`, `ge360_developer`, `ge360_crm`, `ge360_data_intake`, `ge360_n8n_engineer`, `ge360_automation` e `ge360_wordpress_seo`.
 
 `ge360_n8n_engineer` possiede il dominio tecnico n8n. `ge360_automation` resta il profilo trasversale per automazioni e integrazioni multi-app.
 
@@ -25,3 +25,24 @@ Il nuovo file viene creato in `~/.codex/agents/sicurezza.toml`. Non serve modifi
 ```bash
 jarvis agents
 ```
+
+
+## Data Intake Engineer
+
+`ge360_data_intake` gestisce i file in ingresso prima che arrivino a CRM o automazioni:
+
+- CSV / XLSX / JSON / TXT;
+- riconoscimento colonne;
+- schema GE360 canonico;
+- normalizzazione;
+- deduplica;
+- report qualità;
+- output derivato separato dall'originale.
+
+Gli allegati caricati dalla dashboard sono persistenti in:
+
+```text
+~/.local/share/ge360-jarvis/inbox/
+```
+
+quindi non vengono cancellati da `jarvis update`.

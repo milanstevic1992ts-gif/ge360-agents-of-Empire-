@@ -19,33 +19,76 @@
   <main>
     <section class="hero">
       <div>
-        <p class="hero-kicker">SUPER TERMINALE</p>
-        <h2>Descrivi il problema.<br><span>Codex lavora sul server.</span></h2>
-        <p class="muted">Sessioni persistenti, diagnostica Debian, Docker e servizi GE360 in un'unica interfaccia.</p>
+        <p class="hero-kicker">CENTRO DI COMANDO</p>
+        <h2>JARVIS dirige.<br><span>Gli agenti lavorano.</span></h2>
+        <p class="muted">Scegli il modello Codex, controlla gli agenti specializzati e osserva il log reale delle sessioni.</p>
       </div>
       <button id="refresh" class="ghost">Aggiorna stato</button>
     </section>
 
     <section id="metrics" class="metrics"></section>
 
+    <section class="panel command-panel">
+      <div class="panel-head">
+        <div>
+          <div class="eyebrow">NUOVA SESSIONE</div>
+          <h3>Avvia JARVIS Codex</h3>
+        </div>
+        <span class="microcopy">Luna consuma meno · Terra bilanciato · Sol per lavori difficili</span>
+      </div>
+      <div class="create-grid model-grid">
+        <input id="session-name" value="jarvis" maxlength="40" placeholder="Nome sessione">
+        <select id="workspace"></select>
+        <select id="model"></select>
+        <button id="create" class="primary">Avvia Codex</button>
+      </div>
+      <div id="model-note" class="model-note"></div>
+      <div id="auth-warning" class="notice hidden"></div>
+    </section>
+
+    <section class="panel usage-panel">
+      <div class="panel-head">
+        <div>
+          <div class="eyebrow">CONSUMO CODEX</div>
+          <h3>Uso, quota e reset</h3>
+        </div>
+        <div class="row-actions">
+          <select id="usage-session" class="compact-select"></select>
+          <button id="usage-refresh" class="ghost small">Leggi /status</button>
+          <button id="usage-copy" class="ghost small">Copia</button>
+        </div>
+      </div>
+      <div class="usage-grid">
+        <div class="usage-summary">
+          <div class="usage-big" id="usage-state">In attesa</div>
+          <p id="usage-note" class="muted small-text">Seleziona una sessione e premi “Leggi /status”.</p>
+          <div class="notice subtle">Il saldo crediti account completo non è esposto da una API CLI pubblica documentata. Qui mostriamo solo ciò che Codex restituisce realmente con <b>/status</b>.</div>
+        </div>
+        <pre id="usage-output" class="mini-terminal">Nessun dato ancora.</pre>
+      </div>
+    </section>
+
     <section class="panel">
       <div class="panel-head">
         <div>
-          <div class="eyebrow">NUOVO AGENTE</div>
-          <h3>Avvia una sessione Codex</h3>
+          <div class="eyebrow">TEAM JARVIS</div>
+          <h3>Agenti specializzati</h3>
         </div>
+        <button id="toggle-new-agent" class="primary small">+ Nuovo agente</button>
       </div>
-      <div class="create-grid">
-        <input id="session-name" value="jarvis" maxlength="40" placeholder="Nome sessione">
-        <select id="workspace"></select>
-        <button id="create" class="primary">Avvia Codex</button>
+
+      <div id="new-agent-form" class="new-agent-form hidden">
+        <input id="new-agent-id" maxlength="40" placeholder="ID, es. sicurezza">
+        <input id="new-agent-description" maxlength="500" placeholder="Descrizione: cosa deve saper fare">
+        <button id="create-agent" class="primary">Crea agente</button>
       </div>
-      <div id="auth-warning" class="notice hidden"></div>
+
+      <div id="agents" class="agent-grid"></div>
     </section>
 
     <section class="split">
       <div class="panel">
-        <div class="panel-head"><div><div class="eyebrow">AGENTI</div><h3>Sessioni attive</h3></div></div>
+        <div class="panel-head"><div><div class="eyebrow">SESSIONI</div><h3>JARVIS attivi</h3></div></div>
         <div id="sessions" class="session-list"></div>
       </div>
 
@@ -55,14 +98,34 @@
       </div>
     </section>
 
-    <section id="terminal-panel" class="panel terminal-panel hidden">
+    <section id="agent-detail-panel" class="panel hidden">
       <div class="panel-head">
-        <div><div class="eyebrow">TERMINALE CODEX</div><h3 id="terminal-title">Sessione</h3></div>
-        <button id="close-terminal" class="ghost small">Chiudi vista</button>
+        <div><div class="eyebrow">ISTRUZIONI AGENTE</div><h3 id="agent-detail-title">Agente</h3></div>
+        <div class="row-actions">
+          <button id="agent-detail-copy" class="ghost small">Copia istruzioni</button>
+          <button id="agent-detail-close" class="ghost small">Chiudi</button>
+        </div>
       </div>
-      <pre id="screen" class="terminal">Seleziona una sessione.</pre>
+      <p id="agent-detail-description" class="muted"></p>
+      <pre id="agent-detail-text" class="mini-terminal"></pre>
+    </section>
+
+    <section id="terminal-panel" class="panel terminal-panel">
+      <div class="panel-head">
+        <div>
+          <div class="eyebrow">LOG LIVE JARVIS / AGENTI</div>
+          <h3 id="terminal-title">Nessuna sessione selezionata</h3>
+          <div class="sub">Output reale del terminale Codex. Quando Codex mostra deleghe o risultati dei subagenti, li vedrai qui.</div>
+        </div>
+        <div class="row-actions">
+          <select id="log-session" class="compact-select"></select>
+          <button id="copy-log" class="ghost small">Copia log</button>
+          <button id="refresh-log" class="ghost small">Aggiorna</button>
+        </div>
+      </div>
+      <pre id="screen" class="terminal">Avvia o seleziona una sessione JARVIS.</pre>
       <div class="prompt-box">
-        <textarea id="prompt" rows="3" placeholder="Esempio: Mautic non si apre. Trova il problema, fai backup prima di modificare e verifica alla fine."></textarea>
+        <textarea id="prompt" rows="3" placeholder="Scrivi a JARVIS. Esempio: usa l'agente Docker per controllare SuiteCRM e riportami il risultato."></textarea>
         <button id="send" class="primary">Invia a JARVIS</button>
       </div>
     </section>

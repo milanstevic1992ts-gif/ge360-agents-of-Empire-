@@ -72,7 +72,7 @@ case "$cmd" in
       exit 1
     fi
     git -C "$SOURCE_PATH" pull --ff-only
-    exec "$SOURCE_PATH/scripts/install.sh"
+    exec bash "$SOURCE_PATH/scripts/install.sh"
     ;;
   stop)
     tmux kill-session -t "$SESSION" 2>/dev/null || true

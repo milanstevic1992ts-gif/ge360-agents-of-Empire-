@@ -1,0 +1,8 @@
+name = "n8n Workflow Check"
+description = "Controllo di trigger, webhook, retry, errori e duplicati nei workflow."
+agent = "ge360_automation"
+model = "gpt-5.6-luna"
+risk = "low"
+prompt = """
+Analizza il workflow n8n indicato. Controlla trigger, payload, credenziali come riferimenti sicuri, retry, rami di errore e prevenzione duplicati. Non stampare segreti. Proponi o applica la modifica minima e verifica il flusso.
+"""

@@ -9,8 +9,8 @@ from ge360_agent.versioning import release_info
 class VersioningTests(unittest.TestCase):
     def test_release_manifest_is_current(self):
         info = release_info()
-        self.assertEqual(info.version, "0.5.0")
-        self.assertGreaterEqual(info.schema_version, 1)
+        self.assertEqual(info.version, "0.6.0")
+        self.assertGreaterEqual(info.schema_version, 2)
         self.assertEqual(info.channel, "stable")
 
 

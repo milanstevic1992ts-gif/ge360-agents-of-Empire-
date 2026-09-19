@@ -88,9 +88,79 @@ def migration_2() -> None:
         conn.close()
 
 
+def migration_3() -> None:
+    RUNTIME.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB)
+    try:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS chat_threads (
+                thread_id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                workspace_id TEXT NOT NULL,
+                cwd TEXT NOT NULL,
+                model TEXT NOT NULL,
+                effort TEXT NOT NULL,
+                primary_agent TEXT NOT NULL,
+                collaborators_json TEXT NOT NULL DEFAULT '[]',
+                status TEXT NOT NULL DEFAULT 'idle',
+                current_turn_id TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS chat_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                thread_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                kind TEXT NOT NULL DEFAULT 'message',
+                item_id TEXT NOT NULL DEFAULT '',
+                content TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'completed',
+                meta_json TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS chat_server_requests (
+                request_id TEXT PRIMARY KEY,
+                thread_id TEXT NOT NULL,
+                method TEXT NOT NULL,
+                payload_json TEXT NOT NULL DEFAULT '{}',
+                status TEXT NOT NULL DEFAULT 'pending',
+                result_json TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                resolved_at TEXT NOT NULL DEFAULT ''
+            )
+            """
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_chat_threads_updated ON chat_threads(updated_at DESC)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_chat_messages_thread ON chat_messages(thread_id, id)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_chat_messages_item ON chat_messages(thread_id, item_id)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_chat_requests_thread ON chat_server_requests(thread_id, created_at)"
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 MIGRATIONS = {
     1: migration_1,
     2: migration_2,
+    3: migration_3,
 }
 
 

@@ -97,12 +97,18 @@
     </section>
 
     <section class="panel">
-      <div class="panel-head">
+      <div class="panel-head team-head">
         <div>
           <div class="eyebrow">TEAM JARVIS</div>
-          <h3>Agenti specializzati</h3>
+          <div class="title-row">
+            <h3>Agenti specializzati</h3>
+            <span id="agent-count" class="count-badge">0 agenti</span>
+          </div>
         </div>
-        <button id="toggle-new-agent" class="primary small">+ Nuovo agente</button>
+        <div class="team-actions">
+          <input id="agent-search" class="agent-search" type="search" placeholder="Cerca agente…" autocomplete="off">
+          <button id="toggle-new-agent" class="primary small">+ Nuovo agente</button>
+        </div>
       </div>
 
       <div id="new-agent-form" class="new-agent-form hidden">

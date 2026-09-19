@@ -8,8 +8,8 @@ Un super-terminale leggero per Debian che usa **OpenAI Codex CLI** come motore e
 - dashboard Web/mobile privata;
 - stato Debian, Docker e servizi systemd;
 - login Codex riutilizzato dall'utente Linux;
-- **JARVIS + 7 subagenti Codex specializzati**;
-- creazione semplice di un 8°, 9° o ulteriore agente;
+- **JARVIS + 8 subagenti Codex specializzati**;
+- creazione semplice di un 9°, 10° o ulteriore agente;
 - selezione modello **GPT-5.6 Luna / Terra / Sol**;
 - selezione del **reasoning effort**;
 - pannello uso/quota basato sull'output reale di `/status`;
@@ -37,7 +37,7 @@ GE360 JARVIS Dashboard
        |
        +--> tmux --> Codex CLI --> Debian / Docker / Git
        |
-       +--> 7+ subagenti Codex
+       +--> 8+ subagenti Codex
        |
        +--> memoria operativa SQLite
        |
@@ -52,7 +52,7 @@ Codex resta il cervello. GE360 aggiunge l'orchestrazione senza installare un sec
 - `ge360_docker` — Docker/Compose, container, healthcheck, volumi;
 - `ge360_developer` — codice, bugfix, Git, test, API;
 - `ge360_crm` — SuiteCRM, Mautic, Prospex;
-- `ge360_n8n_engineer` — n8n: nodi, webhook, expressions, Code, sub-workflow, API, retry, workflow JSON e self-hosting;
+- `ge360_data_intake` — CSV/XLSX/JSON/TXT, pulizia, normalizzazione, deduplica e preparazione import;\n- `ge360_n8n_engineer` — n8n: nodi, webhook, expressions, Code, sub-workflow, API, retry, workflow JSON e self-hosting;
 - `ge360_automation` — automazioni trasversali, webhook, integrazioni e orchestrazione fra applicazioni;
 - `ge360_wordpress_seo` — WordPress, plugin, performance e SEO locale.
 
@@ -110,7 +110,7 @@ Sono presenti ricette riutilizzabili in `recipes/`:
 - n8n Workflow Check;
 - n8n Workflow Build;
 - WordPress Safe Change;
-- Repo Bugfix.
+- Repo Bugfix;\n- Data Intake · Pulisci contatti.
 
 Il sistema è volutamente semplice: file TOML leggibili e versionabili.
 
@@ -268,3 +268,26 @@ La dashboard 0.5.0 mostra stati:
 e una timeline persistente delle deleghe JARVIS.
 
 La telemetria è oggi fornita dal registro GE360 versionato. È già presente un adapter opzionale per **Codex App Server**. Quando useremo App Server come provider primario, potremo mappare eventi strutturati come `thread/status/changed` e `collabToolCall` senza cambiare la dashboard o lo schema dell'API.
+
+
+## Allegati e Data Intake
+
+Dalla dashboard Smart Router puoi allegare file `.csv`, `.xlsx`, `.json` e `.txt` fino a 25 MB per file.
+
+I file originali sono conservati fuori dalla cartella del programma:
+
+```text
+~/.local/share/ge360-jarvis/inbox/
+```
+
+La release 0.6.0 registra i metadati nello schema runtime 2 e passa a Codex il percorso reale del file. Il Data Intake Engineer non deve sovrascrivere l'originale: crea sempre un output derivato separato.
+
+Pipeline prevista:
+
+```text
+File allegato
+  -> Data Intake Engineer
+  -> CRM Engineer
+  -> n8n Engineer
+  -> SuiteCRM / Mautic / Prospex / altri sistemi
+```

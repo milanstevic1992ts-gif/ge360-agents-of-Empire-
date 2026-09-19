@@ -14,6 +14,7 @@ RECIPES = ROOT / "recipes"
 
 KNOWN_AGENTS = {
     "ge360_sysadmin": {
+        "anchors": {"tailscale": 8, "systemd": 6, "debian": 5},
         "keywords": {
             "debian", "systemd", "servizio", "service", "rete", "network", "permessi",
             "permission", "apt", "pacchetto", "package", "disco", "ram", "cpu", "tailscale",
@@ -22,6 +23,7 @@ KNOWN_AGENTS = {
         "label": "SysAdmin",
     },
     "ge360_docker": {
+        "anchors": {"docker": 4, "compose": 3},
         "keywords": {
             "docker", "compose", "container", "volume", "healthcheck", "image", "registry",
             "network", "stack", "worker", "scheduler", "mariadb", "mysql", "redis",
@@ -29,6 +31,7 @@ KNOWN_AGENTS = {
         "label": "Docker",
     },
     "ge360_developer": {
+        "anchors": {"github": 4, "repository": 4, "repo": 3, "fastapi": 4},
         "keywords": {
             "codice", "code", "bug", "python", "javascript", "typescript", "api", "fastapi",
             "git", "github", "repo", "repository", "test", "refactor", "patch", "frontend",
@@ -37,6 +40,7 @@ KNOWN_AGENTS = {
         "label": "Developer",
     },
     "ge360_crm": {
+        "anchors": {"suitecrm": 10, "mautic": 10, "prospex": 10},
         "keywords": {
             "suitecrm", "mautic", "prospex", "crm", "campagna", "campaign", "contatti",
             "contacts", "lead", "email", "marketing", "scheduler", "inbound", "mailbox",
@@ -44,6 +48,7 @@ KNOWN_AGENTS = {
         "label": "CRM",
     },
     "ge360_automation": {
+        "anchors": {"n8n": 10, "webhook": 5},
         "keywords": {
             "n8n", "workflow", "webhook", "automazione", "automation", "trigger", "integrazione",
             "integration", "retry", "flow", "cron", "orchestrazione", "orchestration",
@@ -51,6 +56,7 @@ KNOWN_AGENTS = {
         "label": "Automation",
     },
     "ge360_wordpress_seo": {
+        "anchors": {"wordpress": 10, "triesteincostruzione": 10, "google business": 6},
         "keywords": {
             "wordpress", "wp", "plugin", "tema", "theme", "seo", "google business", "schema",
             "pagina", "page", "sito", "website", "triesteincostruzione", "performance",
@@ -164,6 +170,9 @@ def _score_agent(text: str, agent_id: str, description: str = "") -> tuple[int, 
     config = KNOWN_AGENTS.get(agent_id)
     score = 0
     if config:
+        for anchor, weight in config.get("anchors", {}).items():
+            if anchor in haystack:
+                score += int(weight)
         for keyword in config["keywords"]:
             if keyword in haystack:
                 score += 3 if " " in keyword else 2

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#090d14">
   <title>JARVIS · GE360</title>
-  <link rel="stylesheet" href="/assets/styles.css?v=0.5.0">
+  <link rel="stylesheet" href="/assets/styles.css?v=0.6.0">
 </head>
 <body>
   <header class="topbar">
@@ -38,7 +38,25 @@
       </div>
       <div class="smart-grid">
         <div>
-          <textarea id="smart-task" rows="5" placeholder="Esempio: SuiteCRM mostra worker unhealthy ma web e database funzionano. Diagnostica senza toccare i dati e sistema il problema."></textarea>
+          <textarea id="smart-task" rows="5" placeholder="Esempio: allego un CSV di amministratori e geometri. Pulisci, deduplica e prepara i contatti per CRM e Mautic."></textarea>
+
+          <div class="attachments-box">
+            <div class="attachments-head">
+              <div>
+                <div class="eyebrow">ALLEGATI</div>
+                <div class="sub">CSV, XLSX, JSON o TXT · massimo 25 MB per file</div>
+              </div>
+              <div class="row-actions">
+                <input id="file-input" class="hidden" type="file" multiple accept=".csv,.xlsx,.json,.txt">
+                <button id="pick-files" class="ghost small">+ Allega file</button>
+                <button id="refresh-files" class="ghost small">Aggiorna</button>
+              </div>
+            </div>
+            <div id="file-list" class="file-list">
+              <div class="sub">Nessun file caricato.</div>
+            </div>
+          </div>
+
           <div class="smart-actions">
             <select id="recipe" class="compact-select wide-select"></select>
             <button id="load-recipe" class="ghost">Carica playbook</button>
@@ -189,6 +207,6 @@
   </main>
 
   <footer>GE360 Agent Control Center · locale per impostazione predefinita</footer>
-  <script src="/assets/app.js?v=0.5.0"></script>
+  <script src="/assets/app.js?v=0.6.0"></script>
 </body>
 </html>

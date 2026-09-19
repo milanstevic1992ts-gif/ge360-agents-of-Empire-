@@ -21,7 +21,9 @@ jobs:
       - name: Unit tests
         run: python -m unittest discover -s tests -v
       - name: Validate dashboard JavaScript
-        run: node --check web/app.js
+        run: |
+          node --check web/app.js
+          node --check web/chat.js
       - name: Validate shell scripts
         run: |
           bash -n scripts/install.sh

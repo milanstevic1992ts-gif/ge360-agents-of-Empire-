@@ -30,6 +30,7 @@ echo "Destinazione: $DEST"
 "${SUDO[@]}" apt-get install -y python3 python3-venv python3-pip tmux git curl rsync ca-certificates
 
 "${SUDO[@]}" mkdir -p "$DEST" /etc/ge360-agent
+printf '%s\n' "$SOURCE" | "${SUDO[@]}" tee /etc/ge360-agent/source_path >/dev/null
 "${SUDO[@]}" rsync -a --delete --exclude '.git/' --exclude '.venv/' --exclude 'runtime/' "$SOURCE/" "$DEST/"
 "${SUDO[@]}" chown -R "$RUN_USER:$RUN_GROUP" "$DEST"
 

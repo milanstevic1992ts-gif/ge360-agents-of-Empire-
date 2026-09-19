@@ -30,8 +30,8 @@ else
 fi
 
 if [ -x "$ROOT/.venv/bin/python" ]; then
-  if (cd "$ROOT" && "$ROOT/.venv/bin/python" -c 'import fastapi, uvicorn, ge360_agent.main, ge360_agent.smart') >/dev/null 2>&1; then
-    ok "Backend + Smart Router importabili"
+  if (cd "$ROOT" && "$ROOT/.venv/bin/python" -c 'import fastapi, uvicorn, ge360_agent.main, ge360_agent.smart, ge360_agent.activity, ge360_agent.appserver, ge360_agent.versioning') >/dev/null 2>&1; then
+    ok "Backend + Smart Router + update modules importabili"
   else
     fail "Backend Python o Smart Router non importabile"
   fi
@@ -79,6 +79,30 @@ if command -v node >/dev/null 2>&1; then
   fi
 else
   warn "node non presente: controllo sintassi JavaScript saltato"
+fi
+
+if [ -f "$ROOT/VERSION" ] && [ -f "$ROOT/release.json" ]; then
+  ok "Versioning release presente: $(cat "$ROOT/VERSION")"
+else
+  fail "VERSION/release.json mancanti"
+fi
+
+if "$ROOT/.venv/bin/python" "$ROOT/scripts/migrate.py" >/dev/null 2>&1; then
+  ok "Migrazioni runtime allineate"
+else
+  fail "Migrazioni runtime fallite"
+fi
+
+if [ -x "$ROOT/scripts/update.sh" ] && [ -x "$ROOT/scripts/rollback.sh" ]; then
+  ok "Updater e rollback installati"
+else
+  fail "Updater/rollback mancanti o non eseguibili"
+fi
+
+if codex app-server --help >/dev/null 2>&1; then
+  ok "Codex App Server disponibile (provider opzionale)"
+else
+  warn "Codex App Server non disponibile in questa versione CLI"
 fi
 
 if [ -f /etc/ge360-agent/config.toml ]; then ok "Configurazione presente"; else warn "Configurazione /etc/ge360-agent/config.toml mancante"; fi

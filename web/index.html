@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#090d14">
   <title>JARVIS · GE360</title>
-  <link rel="stylesheet" href="/assets/styles.css?v=0.6.0">
+  <link rel="stylesheet" href="/assets/styles.css?v=0.7.0">
 </head>
 <body>
   <header class="topbar">
@@ -28,11 +28,71 @@
 
     <section id="metrics" class="metrics"></section>
 
+    <section id="chat-panel" class="panel chat-panel">
+      <div class="chat-shell">
+        <aside class="chat-sidebar">
+          <div class="chat-sidebar-head">
+            <div>
+              <div class="eyebrow">CONVERSAZIONI</div>
+              <h3>JARVIS</h3>
+            </div>
+            <button id="chat-new" class="primary small">+ Nuova</button>
+          </div>
+          <div id="chat-thread-list" class="chat-thread-list">
+            <div class="sub">Nessuna conversazione.</div>
+          </div>
+          <div class="chat-sidebar-foot">
+            <span class="tiny">App Server · streaming strutturato</span>
+          </div>
+        </aside>
+
+        <div class="chat-main">
+          <div class="chat-header">
+            <div class="chat-heading">
+              <div class="eyebrow">JARVIS CHAT</div>
+              <h3 id="chat-title">Nuova conversazione</h3>
+              <div id="chat-route" class="chat-route"></div>
+            </div>
+            <div class="chat-header-actions">
+              <span id="chat-status" class="chat-status idle"><span class="chat-status-dot"></span><span>PRONTO</span></span>
+              <button id="chat-stop" class="ghost small hidden">Stop</button>
+            </div>
+          </div>
+
+          <div id="chat-messages" class="chat-messages">
+            <div id="chat-welcome" class="chat-welcome">
+              <div class="chat-orb">J</div>
+              <h3>Parla con JARVIS.</h3>
+              <p>Scrivi come in una chat normale. JARVIS sceglie gli agenti, lavora e ti mostra solo ciò che serve.</p>
+              <div class="chat-suggestions">
+                <button class="ghost small" data-chat-suggestion="Controlla lo stato dei servizi GE360 e dimmi se c'è qualcosa che non va.">Controlla GE360</button>
+                <button class="ghost small" data-chat-suggestion="Ho un CSV di contatti: puliscilo, deduplicalo e preparalo per il CRM.">Pulisci un CSV</button>
+                <button class="ghost small" data-chat-suggestion="Controlla n8n e aiutami a creare un workflow robusto.">Lavora su n8n</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-composer-wrap">
+            <div id="chat-attachments" class="chat-attachment-chips"></div>
+            <div class="chat-composer">
+              <button id="chat-attach" class="chat-icon-button" title="Allega file" aria-label="Allega file">+</button>
+              <textarea id="chat-input" rows="1" placeholder="Scrivi a JARVIS…"></textarea>
+              <button id="chat-send" class="chat-send">Invia</button>
+            </div>
+            <div class="chat-composer-foot">
+              <span id="chat-hint">Invio per mandare · Shift+Invio per andare a capo</span>
+              <span id="chat-live-note">Codex App Server</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="panel smart-panel">
       <div class="panel-head">
         <div>
-          <div class="eyebrow">SMART ROUTER</div>
-          <h3>Descrivi il lavoro. JARVIS sceglie come affrontarlo.</h3>
+          <div class="eyebrow">SMART ROUTER · AVANZATO</div>
+          <h3>Analizza il routing prima di avviare una sessione terminale.</h3>
         </div>
         <span class="microcopy">Routing locale: non consuma crediti per analizzare il compito.</span>
       </div>
@@ -207,6 +267,6 @@
   </main>
 
   <footer>GE360 Agent Control Center · locale per impostazione predefinita</footer>
-  <script src="/assets/app.js?v=0.6.0"></script>
+  <script src="/assets/app.js?v=0.7.0"></script>
 </body>
 </html>

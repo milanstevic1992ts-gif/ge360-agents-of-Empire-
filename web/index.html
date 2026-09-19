@@ -21,25 +21,53 @@
       <div>
         <p class="hero-kicker">CENTRO DI COMANDO</p>
         <h2>JARVIS dirige.<br><span>Gli agenti lavorano.</span></h2>
-        <p class="muted">Scegli il modello Codex, controlla gli agenti specializzati e osserva il log reale delle sessioni.</p>
+        <p class="muted">Routing intelligente, subagenti Codex, memoria operativa, playbook e controllo del consumo in un'unica dashboard.</p>
       </div>
       <button id="refresh" class="ghost">Aggiorna stato</button>
     </section>
 
     <section id="metrics" class="metrics"></section>
 
+    <section class="panel smart-panel">
+      <div class="panel-head">
+        <div>
+          <div class="eyebrow">SMART ROUTER</div>
+          <h3>Descrivi il lavoro. JARVIS sceglie come affrontarlo.</h3>
+        </div>
+        <span class="microcopy">Routing locale: non consuma crediti per analizzare il compito.</span>
+      </div>
+      <div class="smart-grid">
+        <div>
+          <textarea id="smart-task" rows="5" placeholder="Esempio: SuiteCRM mostra worker unhealthy ma web e database funzionano. Diagnostica senza toccare i dati e sistema il problema."></textarea>
+          <div class="smart-actions">
+            <select id="recipe" class="compact-select wide-select"></select>
+            <button id="load-recipe" class="ghost">Carica playbook</button>
+            <button id="analyze-task" class="ghost">Analizza</button>
+            <button id="smart-launch" class="primary">Avvia Smart</button>
+          </div>
+        </div>
+        <div id="route-result" class="route-card empty">
+          <div class="eyebrow">PIANO JARVIS</div>
+          <div id="route-primary" class="route-primary">Scrivi un incarico e premi Analizza.</div>
+          <div id="route-details" class="route-details"></div>
+          <p id="route-reason" class="muted small-text"></p>
+        </div>
+      </div>
+    </section>
+
     <section class="panel command-panel">
       <div class="panel-head">
         <div>
-          <div class="eyebrow">NUOVA SESSIONE</div>
-          <h3>Avvia JARVIS Codex</h3>
+          <div class="eyebrow">CONTROLLO MANUALE</div>
+          <h3>Avvia una sessione Codex scegliendo modello e ragionamento</h3>
         </div>
-        <span class="microcopy">Luna consuma meno · Terra bilanciato · Sol per lavori difficili</span>
+        <span class="microcopy">Luna + Low è la combinazione più parsimoniosa.</span>
       </div>
       <div class="create-grid model-grid">
         <input id="session-name" value="jarvis" maxlength="40" placeholder="Nome sessione">
         <select id="workspace"></select>
         <select id="model"></select>
+        <select id="effort"></select>
         <button id="create" class="primary">Avvia Codex</button>
       </div>
       <div id="model-note" class="model-note"></div>
@@ -62,7 +90,7 @@
         <div class="usage-summary">
           <div class="usage-big" id="usage-state">In attesa</div>
           <p id="usage-note" class="muted small-text">Seleziona una sessione e premi “Leggi /status”.</p>
-          <div class="notice subtle">Il saldo crediti account completo non è esposto da una API CLI pubblica documentata. Qui mostriamo solo ciò che Codex restituisce realmente con <b>/status</b>.</div>
+          <div class="notice subtle">Il saldo crediti account completo non viene inventato. Qui mostriamo solo ciò che Codex restituisce realmente con <b>/status</b>.</div>
         </div>
         <pre id="usage-output" class="mini-terminal">Nessun dato ancora.</pre>
       </div>
@@ -98,6 +126,18 @@
       </div>
     </section>
 
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="eyebrow">MEMORIA OPERATIVA</div>
+          <h3>Incarichi recenti e feedback</h3>
+        </div>
+        <span class="microcopy">Il feedback aiuta a capire quali routing funzionano meglio.</span>
+      </div>
+      <div id="smart-stats" class="smart-stats"></div>
+      <div id="activity" class="activity-list"></div>
+    </section>
+
     <section id="agent-detail-panel" class="panel hidden">
       <div class="panel-head">
         <div><div class="eyebrow">ISTRUZIONI AGENTE</div><h3 id="agent-detail-title">Agente</h3></div>
@@ -115,7 +155,7 @@
         <div>
           <div class="eyebrow">LOG LIVE JARVIS / AGENTI</div>
           <h3 id="terminal-title">Nessuna sessione selezionata</h3>
-          <div class="sub">Output reale del terminale Codex. Quando Codex mostra deleghe o risultati dei subagenti, li vedrai qui.</div>
+          <div class="sub">Output reale del terminale Codex. Quando Codex delega ai subagenti o riceve i risultati, lo vedrai qui.</div>
         </div>
         <div class="row-actions">
           <select id="log-session" class="compact-select"></select>

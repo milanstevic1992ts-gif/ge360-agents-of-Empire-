@@ -50,23 +50,16 @@ fi
 "${AS_USER[@]}" "$DEST/.venv/bin/python" -m pip install --upgrade pip
 "${AS_USER[@]}" "$DEST/.venv/bin/pip" install -r "$DEST/requirements.txt"
 
-"${AS_USER[@]}" mkdir -p "$RUN_HOME/.agents/skills" "$RUN_HOME/.codex"
+"${AS_USER[@]}" mkdir -p "$RUN_HOME/.agents/skills" "$RUN_HOME/.codex" "$RUN_HOME/.codex/agents"
 "${AS_USER[@]}" rsync -a "$DEST/.agents/skills/" "$RUN_HOME/.agents/skills/"
+"${AS_USER[@]}" rsync -a "$DEST/codex-agents/" "$RUN_HOME/.codex/agents/"
 
 GLOBAL_AGENTS="$RUN_HOME/.codex/AGENTS.md"
-MARKER="GE360-JARVIS-GLOBAL-POLICY"
-if ! "${AS_USER[@]}" grep -q "$MARKER" "$GLOBAL_AGENTS" 2>/dev/null; then
-  {
-    echo
-    echo "<!-- $MARKER BEGIN -->"
-    cat "$DEST/AGENTS.md"
-    echo "<!-- $MARKER END -->"
-  } | "${SUDO[@]}" tee -a "$GLOBAL_AGENTS" >/dev/null
-  "${SUDO[@]}" chown "$RUN_USER:$RUN_GROUP" "$GLOBAL_AGENTS"
-  echo "[OK] Policy GE360 aggiunta a ~/.codex/AGENTS.md"
-else
-  echo "[OK] Policy GE360 già presente."
-fi
+"${AS_USER[@]}" python3 "$DEST/scripts/sync-global-agents.py" "$DEST/AGENTS.md" "$GLOBAL_AGENTS"
+echo "[OK] Policy GE360 sincronizzata in ~/.codex/AGENTS.md"
+
+"${AS_USER[@]}" python3 "$DEST/scripts/configure-codex.py"
+echo "[OK] 6 subagenti GE360 installati + memoria Codex abilitata."
 
 if ! "${AS_USER[@]}" bash -lc 'export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"; command -v codex >/dev/null 2>&1'; then
   echo "[GE360] Installazione Codex CLI ufficiale..."
@@ -89,6 +82,7 @@ echo " INSTALLAZIONE COMPLETATA"
 echo "======================================"
 echo "Dashboard: http://127.0.0.1:8789"
 echo "Super terminale: jarvis"
+echo "Subagenti: jarvis agents"
 echo "Login ChatGPT/Codex: jarvis login"
 echo
 

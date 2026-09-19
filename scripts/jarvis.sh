@@ -16,6 +16,10 @@ Uso:
   jarvis web             mostra indirizzo dashboard
   jarvis status          stato servizio
   jarvis sessions        sessioni agenti
+  jarvis agents          elenca i subagenti specializzati
+  jarvis add-agent ID "descrizione"
+                         crea facilmente un nuovo subagente
+  jarvis memories        mostra la memoria locale Codex
   jarvis doctor          diagnostica installazione
   jarvis login           login Codex con ChatGPT
   jarvis restart         riavvia dashboard
@@ -49,6 +53,22 @@ case "$cmd" in
     ;;
   sessions)
     tmux list-sessions 2>/dev/null | grep '^ge360-' || echo "Nessuna sessione GE360 attiva."
+    ;;
+  agents)
+    exec python3 "$ROOT/scripts/agent-manager.py" list
+    ;;
+  add-agent)
+    shift
+    exec python3 "$ROOT/scripts/agent-manager.py" add "$@"
+    ;;
+  memories)
+    echo "Memoria Codex locale: $HOME/.codex/memories"
+    if [ -d "$HOME/.codex/memories" ]; then
+      find "$HOME/.codex/memories" -maxdepth 2 -type f -printf '%TY-%Tm-%Td %TH:%TM  %p\n' 2>/dev/null | sort -r | head -30
+    else
+      echo "La cartella non esiste ancora: Codex la creerà quando avrà memorie da salvare."
+    fi
+    echo "Dentro Codex usa /memories per controllare lettura e generazione delle memorie."
     ;;
   doctor)
     exec "$ROOT/scripts/doctor.sh"

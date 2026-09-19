@@ -19,6 +19,7 @@ Uso:
   jarvis doctor          diagnostica installazione
   jarvis login           login Codex con ChatGPT
   jarvis restart         riavvia dashboard
+  jarvis update          aggiorna la repo e reinstalla in sicurezza
   jarvis stop            ferma la sessione terminale jarvis
 EOF
 }
@@ -58,6 +59,20 @@ case "$cmd" in
   restart)
     sudo systemctl restart ge360-agent-control.service
     systemctl --no-pager --full status ge360-agent-control.service || true
+    ;;
+  update)
+    SOURCE_PATH="$(cat /etc/ge360-agent/source_path 2>/dev/null || true)"
+    if [ -z "$SOURCE_PATH" ] || [ ! -d "$SOURCE_PATH/.git" ]; then
+      echo "Checkout sorgente non trovato. Aggiorna manualmente la clone GitHub e riesegui scripts/install.sh."
+      exit 1
+    fi
+    if [ -n "$(git -C "$SOURCE_PATH" status --porcelain)" ]; then
+      echo "La repo sorgente contiene modifiche locali. Non le sovrascrivo automaticamente."
+      git -C "$SOURCE_PATH" status --short
+      exit 1
+    fi
+    git -C "$SOURCE_PATH" pull --ff-only
+    exec "$SOURCE_PATH/scripts/install.sh"
     ;;
   stop)
     tmux kill-session -t "$SESSION" 2>/dev/null || true

@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 import uvicorn
 
 from .agents import create_agent, list_agents
+from .activity import agents_for_session, latest_by_agent, record as record_activity, timeline as agent_timeline
 from .codex import codex_status
 from .config import Settings, load_settings
 from .health import docker_status, system_health, systemd_status
@@ -24,6 +25,7 @@ from .smart import (
     route_task,
 )
 from .tmux import TmuxError, TmuxManager
+from .versioning import release_info, git_commit
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -65,7 +67,7 @@ EFFORT_IDS = {e["id"] for e in REASONING_EFFORTS}
 
 app = FastAPI(
     title="GE360 Agent Control Center",
-    version="0.4.1",
+    version=release_info().version,
     docs_url=None,
     redoc_url=None,
 )
@@ -153,16 +155,22 @@ def _command_for_model(model: str, effort: str) -> str:
 
 
 def _agents_payload():
-    return [
-        {
+    latest = latest_by_agent()
+    payload = []
+    for a in list_agents():
+        event = latest.get(a.id, {})
+        payload.append({
             "id": a.id,
             "name": a.name,
             "description": a.description,
             "instructions": a.instructions,
-            "status": "ready",
-        }
-        for a in list_agents()
-    ]
+            "status": event.get("status", "ready"),
+            "last_event": event.get("event_type", ""),
+            "last_detail": event.get("detail", ""),
+            "last_seen": event.get("created_at", ""),
+            "status_source": event.get("source", "ge360"),
+        })
+    return payload
 
 
 def _route_payload(route):
@@ -198,7 +206,9 @@ def status():
         for s in tmux.list()
     ]
     smart = smart_activity(12)
+    release = release_info()
     return {
+        "release": {"version": release.version, "schema_version": release.schema_version, "channel": release.channel, "commit": git_commit()},
         "system": system_health(),
         "codex": codex_status(),
         "docker": docker_status(),
@@ -209,6 +219,7 @@ def status():
         "reasoning_efforts": REASONING_EFFORTS,
         "recipes": list_recipes(),
         "smart": smart,
+        "agent_timeline": agent_timeline(30),
         "workspaces": [
             {
                 "id": ws.id,
@@ -279,6 +290,10 @@ def smart_launch(body: SmartLaunchRequest):
     raw_name = body.name.strip() or f"smart-{datetime.now().strftime('%H%M%S')}"
     try:
         name = tmux.create(raw_name, str(ws.path), command, model=model)
+        record_activity(name, "jarvis", "working", "session_started", "Smart task avviato", "ge360")
+        record_activity(name, route.primary_agent, "working", "delegated", "Agente principale selezionato dal router", "ge360")
+        for collaborator in route.collaborators:
+            record_activity(name, collaborator, "waiting", "queued", "Collaboratore pronto se richiesto", "ge360")
         tmux.send(name, build_delegation_prompt(body.task, route))
         event_id = remember_launch(name, body.task, route)
         return {
@@ -309,12 +324,18 @@ def smart_activity_endpoint(limit: int = 20):
     return smart_activity(limit)
 
 
+@app.get("/api/agents/timeline", dependencies=[Depends(guard)])
+def agents_timeline(limit: int = 80, session: str = ""):
+    return {"events": agent_timeline(limit, session)}
+
+
 @app.post("/api/sessions", dependencies=[Depends(guard)])
 def create_session(body: NewSession):
     ws = _workspace(body.workspace_id)
     command = _command_for_model(body.model, body.effort)
     try:
         name = tmux.create(body.name, str(ws.path), command, model=body.model)
+        record_activity(name, "jarvis", "working", "session_started", "Sessione manuale avviata", "ge360")
         return {"ok": True, "name": name, "model": body.model, "effort": body.effort}
     except (TmuxError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -345,6 +366,7 @@ def session_usage(name: str):
 def session_message(name: str, body: Message):
     try:
         tmux.send(name, body.text)
+        record_activity(name, "jarvis", "working", "message_sent", "Nuovo input ricevuto", "ge360")
         return {"ok": True}
     except TmuxError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -353,7 +375,10 @@ def session_message(name: str, body: Message):
 @app.delete("/api/sessions/{name}", dependencies=[Depends(guard)])
 def stop_session(name: str):
     try:
+        involved = agents_for_session(name)
         tmux.stop(name)
+        for agent_id in involved:
+            record_activity(name, agent_id, "done", "session_stopped", "Sessione chiusa", "ge360")
         return {"ok": True}
     except TmuxError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

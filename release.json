@@ -1,7 +1,7 @@
 {
-  "version": "0.7.0",
+  "version": "0.7.1",
   "schema_version": 3,
   "channel": "stable",
   "min_python": "3.11",
-  "notes": "Structured JARVIS chat powered by persistent Codex App Server streaming, tool cards and approvals."
+  "notes": "Installer auto-recovers a corrupt Codex config.toml without touching ChatGPT auth."
 }

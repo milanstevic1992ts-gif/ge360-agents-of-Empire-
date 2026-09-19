@@ -4,4 +4,4 @@
   "channel": "stable",
   "min_python": "3.11",
   "notes": "Structured JARVIS chat powered by persistent Codex App Server streaming, tool cards and approvals."
-}\n
+}

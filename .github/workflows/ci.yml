@@ -1,0 +1,27 @@
+name: GE360 Agent CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install runtime
+        run: pip install -r requirements.txt
+      - name: Compile Python
+        run: python -m compileall -q ge360_agent
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Validate shell scripts
+        run: |
+          bash -n scripts/install.sh
+          bash -n scripts/codex-login.sh
+          bash -n scripts/doctor.sh
+          bash -n scripts/jarvis.sh
+          bash -n scripts/uninstall.sh

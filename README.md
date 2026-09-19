@@ -1,10 +1,13 @@
 # GE360 Agent Control Center
 
-Un super-terminale leggero per Debian che usa **OpenAI Codex CLI** come motore e aggiunge un livello GE360 per controllo, routing, memoria operativa e dashboard.
+Un centro di comando leggero per Debian che usa **OpenAI Codex** come motore e aggiunge chat strutturata, routing, agenti specializzati, memoria operativa e dashboard.
 
 ## Cosa fa oggi
 
-- sessioni persistenti con `tmux`;
+- **chat JARVIS strutturata e streaming** tramite Codex App Server;
+- cronologia conversazioni persistente;
+- card per tool, reasoning, approvazioni e richieste di input;
+- sessioni terminale persistenti con `tmux` come modalità avanzata/fallback;
 - dashboard Web/mobile privata;
 - stato Debian, Docker e servizi systemd;
 - login Codex riutilizzato dall'utente Linux;
@@ -35,7 +38,11 @@ GE360 JARVIS Dashboard
        |      +--> reasoning
        |      +--> rischio
        |
-       +--> tmux --> Codex CLI --> Debian / Docker / Git
+       +--> JARVIS Chat
+       |      +--> Codex App Server (stdio JSON-RPC)
+       |      +--> SSE --> messaggi / tool / approvazioni
+       |
+       +--> tmux --> Codex CLI --> fallback terminale
        |
        +--> 8+ subagenti Codex
        |
@@ -52,7 +59,8 @@ Codex resta il cervello. GE360 aggiunge l'orchestrazione senza installare un sec
 - `ge360_docker` — Docker/Compose, container, healthcheck, volumi;
 - `ge360_developer` — codice, bugfix, Git, test, API;
 - `ge360_crm` — SuiteCRM, Mautic, Prospex;
-- `ge360_data_intake` — CSV/XLSX/JSON/TXT, pulizia, normalizzazione, deduplica e preparazione import;\n- `ge360_n8n_engineer` — n8n: nodi, webhook, expressions, Code, sub-workflow, API, retry, workflow JSON e self-hosting;
+- `ge360_data_intake` — CSV/XLSX/JSON/TXT, pulizia, normalizzazione, deduplica e preparazione import;
+- `ge360_n8n_engineer` — n8n: nodi, webhook, expressions, Code, sub-workflow, API, retry, workflow JSON e self-hosting;
 - `ge360_automation` — automazioni trasversali, webhook, integrazioni e orchestrazione fra applicazioni;
 - `ge360_wordpress_seo` — WordPress, plugin, performance e SEO locale.
 
@@ -110,7 +118,8 @@ Sono presenti ricette riutilizzabili in `recipes/`:
 - n8n Workflow Check;
 - n8n Workflow Build;
 - WordPress Safe Change;
-- Repo Bugfix;\n- Data Intake · Pulisci contatti.
+- Repo Bugfix;
+- Data Intake · Pulisci contatti.
 
 Il sistema è volutamente semplice: file TOML leggibili e versionabili.
 
@@ -180,19 +189,22 @@ http://127.0.0.1:8789
 - servizio systemd;
 - API dashboard.
 
-## Prossima evoluzione
+## Chat JARVIS 0.7
 
-La prossima fase importante è un bridge verso **Codex App Server** per usare eventi strutturati invece di dedurre lo stato dal terminale:
+La modalità principale è una chat strutturata sopra **Codex App Server**:
 
-- elenco modelli realmente disponibili;
-- `thread/status/changed`;
-- `turn/*`;
-- `item/*`;
-- stati subagenti;
-- timeline di handoff;
-- usage strutturato quando disponibile.
+- conversazioni persistenti;
+- risposta in streaming;
+- stato `PRONTO / JARVIS STA LAVORANDO / ATTESA / ERRORE`;
+- tool call e attività come card;
+- approvazione di comandi e modifiche file direttamente nella conversazione;
+- richieste di informazioni mostrate come input;
+- allegati condivisi con Data Intake;
+- recupero dal database se lo stream si interrompe.
 
-tmux resterà il fallback interattivo.
+Il terminale tmux resta disponibile più in basso come modalità avanzata/fallback.
+
+Le prossime integrazioni App Server riguardano modello dinamico dall'account, handoff subagenti più dettagliati e usage strutturato quando disponibile.
 
 Vedi:
 
@@ -267,7 +279,7 @@ La dashboard 0.5.0 mostra stati:
 
 e una timeline persistente delle deleghe JARVIS.
 
-La telemetria è oggi fornita dal registro GE360 versionato. È già presente un adapter opzionale per **Codex App Server**. Quando useremo App Server come provider primario, potremo mappare eventi strutturati come `thread/status/changed` e `collabToolCall` senza cambiare la dashboard o lo schema dell'API.
+Dalla release 0.7 la chat usa **Codex App Server** come provider primario per messaggi, stato dei turni, tool call e approvazioni. Il registro GE360 continua a fornire timeline e memoria operativa; tmux rimane il fallback interattivo.
 
 
 ## Allegati e Data Intake

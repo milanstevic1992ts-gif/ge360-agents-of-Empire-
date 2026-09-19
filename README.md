@@ -43,8 +43,7 @@ La dashboard deve restare privata: di default ascolta solo su `127.0.0.1`. Per a
 ```bash
 git clone https://github.com/milanstevic1992ts-gif/ge360-agents-of-Empire-.git
 cd ge360-agents-of-Empire-
-chmod +x scripts/install.sh
-./scripts/install.sh
+bash scripts/install.sh
 ```
 
 Poi:

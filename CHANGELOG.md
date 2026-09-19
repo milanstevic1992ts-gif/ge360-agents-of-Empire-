@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.7.0
+
+### JARVIS Chat
+- Codex App Server diventa il motore della chat strutturata via stdio JSON-RPC;
+- streaming live al browser via SSE;
+- cronologia conversazioni persistente in SQLite;
+- messaggi utente/JARVIS separati e stato live working / waiting / error / idle;
+- tool call, reasoning e piani mostrati come card invece di output terminale grezzo;
+- approvazioni comando/file direttamente nella chat;
+- richieste di input Codex mostrate nella conversazione;
+- allegati riutilizzati nel composer chat;
+- pulsante Stop per interrompere il turno;
+- recupero dalla cronologia persistente se un evento streaming viene perso;
+- tmux resta disponibile come modalità avanzata e fallback.
+
+### Runtime
+- schema runtime 3: chat_threads, chat_messages e chat_server_requests;
+- test per delta streaming e approval request;
+- doctor e CI validano anche chat.js e il modulo chat.
+
+
 ## 0.5.0
 
 ### Update system

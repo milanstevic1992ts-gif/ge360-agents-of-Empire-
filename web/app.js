@@ -3,7 +3,9 @@ const state = {
   active: null,
   timer: null,
   agents: [],
-  route: null
+  route: null,
+  files: [],
+  attachments: new Set()
 };
 const $ = (id) => document.getElementById(id);
 
@@ -15,12 +17,13 @@ function headers(json=false) {
   return h;
 }
 async function api(path, options={}) {
-  options.headers = {...headers(Boolean(options.body)), ...(options.headers||{})};
+  const isForm = typeof FormData !== "undefined" && options.body instanceof FormData;
+  options.headers = {...headers(Boolean(options.body) && !isForm), ...(options.headers||{})};
   let r = await fetch(path, options);
   if (r.status === 401) {
     const value = prompt("Token GE360 richiesto:");
     if (value !== null) localStorage.setItem("ge360_token", value.trim());
-    options.headers = {...headers(Boolean(options.body)), ...(options.headers||{})};
+    options.headers = {...headers(Boolean(options.body) && !isForm), ...(options.headers||{})};
     r = await fetch(path, options);
   }
   if (!r.ok) {
@@ -64,6 +67,7 @@ const AGENT_VISUALS = {
   ge360_docker: {name:"Docker Engineer", badge:"DKR", role:"DOCKER / COMPOSE", cls:"docker"},
   ge360_developer: {name:"Developer", badge:"DEV", role:"CODICE / GIT / TEST", cls:"dev"},
   ge360_crm: {name:"CRM Engineer", badge:"CRM", role:"SUITECRM / MAUTIC", cls:"crm"},
+  ge360_data_intake: {name:"Data Intake Engineer", badge:"DATA", role:"CSV / EXCEL / CLEANING", cls:"data"},
   ge360_n8n_engineer: {name:"n8n Engineer", badge:"n8n", role:"N8N SPECIALIST", cls:"n8n"},
   ge360_automation: {name:"Automation", badge:"AUT", role:"INTEGRAZIONI / FLOW", cls:"automation"},
   ge360_wordpress_seo: {name:"WordPress / SEO", badge:"WP", role:"WORDPRESS / SEO", cls:"wp"}
@@ -79,6 +83,67 @@ function agentVisual(id, fallback="") {
 function agentDisplayName(id) {
   const found=state.agents.find(a=>a.id===id);
   return agentVisual(id, found?.name).name;
+}
+
+function formatSize(n) {
+  if (n < 1024) return n+" B";
+  if (n < 1048576) return (n/1024).toFixed(1)+" KB";
+  return (n/1048576).toFixed(1)+" MB";
+}
+function renderFiles(files) {
+  state.files=files||[];
+  const box=$("file-list");
+  if(!box) return;
+  const existingIds=new Set(state.files.filter(f=>f.exists).map(f=>f.id));
+  state.attachments.forEach(id=>{ if(!existingIds.has(id)) state.attachments.delete(id); });
+  if(!state.files.length) {
+    box.innerHTML='<div class="sub">Nessun file caricato.</div>';
+    return;
+  }
+  box.innerHTML=state.files.map(f=>{
+    const checked=state.attachments.has(f.id) ? " checked" : "";
+    const missing=f.exists ? "" : " missing";
+    return '<label class="file-row'+missing+'">'+
+      '<input type="checkbox" data-file-id="'+safe(f.id)+'"'+checked+(f.exists?'':' disabled')+'>'+
+      '<div class="file-main"><b>'+safe(f.original_name)+'</b><div class="tiny">'+formatSize(Number(f.size_bytes||0))+' · '+safe(f.uploaded_at||'')+'</div></div>'+
+      '<span class="file-state">'+(f.exists?'allegabile':'mancante')+'</span>'+
+      '</label>';
+  }).join('');
+  document.querySelectorAll("[data-file-id]").forEach(el=>{
+    el.onchange=()=>{
+      const id=el.getAttribute("data-file-id");
+      if(el.checked) state.attachments.add(id); else state.attachments.delete(id);
+      state.route=null;
+    };
+  });
+}
+async function refreshFiles() {
+  try {
+    const r=await api("/api/files");
+    renderFiles(r.files||[]);
+  } catch(e) {
+    const box=$("file-list");
+    if(box) box.innerHTML='<div class="sub">Errore allegati: '+safe(e.message)+'</div>';
+  }
+}
+async function uploadFiles(fileList) {
+  const files=Array.from(fileList||[]);
+  if(!files.length) return;
+  const form=new FormData();
+  files.forEach(f=>form.append("files",f));
+  const button=$("pick-files");
+  if(button) button.textContent="Caricamento…";
+  try {
+    const r=await api("/api/files",{method:"POST",body:form});
+    (r.files||[]).forEach(f=>state.attachments.add(f.id));
+    await refreshFiles();
+    state.route=null;
+  } catch(e) {
+    alert(e.message);
+  } finally {
+    if(button) button.textContent="+ Allega file";
+    if($("file-input")) $("file-input").value="";
+  }
 }
 
 function renderModels(models) {
@@ -153,7 +218,7 @@ async function analyzeTask() {
   $("route-details").innerHTML="";
   $("route-reason").textContent="";
   try {
-    const r=await api("/api/smart/route",{method:"POST",body:JSON.stringify({task})});
+    const r=await api("/api/smart/route",{method:"POST",body:JSON.stringify({task,attachments:[...state.attachments]})});
     renderRoute(r.route);
     return r.route;
   } catch(e) {
@@ -173,7 +238,8 @@ async function smartLaunch() {
     const body={
       task,
       workspace_id:$("workspace").value,
-      name:""
+      name:"",
+      attachments:[...state.attachments]
     };
     const r=await api("/api/smart/launch",{method:"POST",body:JSON.stringify(body)});
     state.active=r.name;
@@ -438,6 +504,9 @@ $("refresh").onclick=refresh;
 $("create").onclick=createSession;
 $("model").onchange=updateModelNote;
 $("effort").onchange=updateModelNote;
+$("pick-files").onclick=()=>$("file-input").click();
+$("file-input").onchange=()=>uploadFiles($("file-input").files);
+$("refresh-files").onclick=refreshFiles;
 $("load-recipe").onclick=loadRecipe;
 $("analyze-task").onclick=analyzeTask;
 $("smart-launch").onclick=smartLaunch;
@@ -472,5 +541,5 @@ $("prompt").addEventListener("keydown",e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==="Enter") sendPrompt();
 });
 
-refresh().then(updateScreen);
+Promise.all([refresh(),refreshFiles()]).then(updateScreen);
 state.timer=setInterval(()=>{refresh();updateScreen();},3500);

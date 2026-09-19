@@ -8,8 +8,8 @@ Un super-terminale leggero per Debian che usa **OpenAI Codex CLI** come motore e
 - dashboard Web/mobile privata;
 - stato Debian, Docker e servizi systemd;
 - login Codex riutilizzato dall'utente Linux;
-- **JARVIS + 6 subagenti Codex specializzati**;
-- creazione semplice di un 7°, 8° o ulteriore agente;
+- **JARVIS + 7 subagenti Codex specializzati**;
+- creazione semplice di un 8°, 9° o ulteriore agente;
 - selezione modello **GPT-5.6 Luna / Terra / Sol**;
 - selezione del **reasoning effort**;
 - pannello uso/quota basato sull'output reale di `/status`;
@@ -37,7 +37,7 @@ GE360 JARVIS Dashboard
        |
        +--> tmux --> Codex CLI --> Debian / Docker / Git
        |
-       +--> 6+ subagenti Codex
+       +--> 7+ subagenti Codex
        |
        +--> memoria operativa SQLite
        |
@@ -52,7 +52,8 @@ Codex resta il cervello. GE360 aggiunge l'orchestrazione senza installare un sec
 - `ge360_docker` — Docker/Compose, container, healthcheck, volumi;
 - `ge360_developer` — codice, bugfix, Git, test, API;
 - `ge360_crm` — SuiteCRM, Mautic, Prospex;
-- `ge360_automation` — n8n, webhook, workflow e integrazioni;
+- `ge360_n8n_engineer` — n8n: nodi, webhook, expressions, Code, sub-workflow, API, retry, workflow JSON e self-hosting;
+- `ge360_automation` — automazioni trasversali, webhook, integrazioni e orchestrazione fra applicazioni;
 - `ge360_wordpress_seo` — WordPress, plugin, performance e SEO locale.
 
 Aggiungere un nuovo agente:
@@ -107,6 +108,7 @@ Sono presenti ricette riutilizzabili in `recipes/`:
 - Docker Recovery;
 - systemd Recovery;
 - n8n Workflow Check;
+- n8n Workflow Build;
 - WordPress Safe Change;
 - Repo Bugfix.
 

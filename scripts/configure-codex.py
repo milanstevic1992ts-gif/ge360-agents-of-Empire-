@@ -8,6 +8,20 @@ import re
 import shutil
 
 
+def upsert_root(text: str, key: str, value: str) -> str:
+    key_re = re.compile(rf"(?m)^\s*{re.escape(key)}\s*=.*$")
+    if key_re.search(text):
+        return key_re.sub(f"{key} = {value}", text, count=1)
+
+    first_header = re.search(r"(?m)^\s*\[[^\]]+\]\s*(?:#.*)?$", text)
+    line = f"{key} = {value}\n"
+    if first_header:
+        prefix = text[:first_header.start()].rstrip()
+        suffix = text[first_header.start():].lstrip()
+        return (prefix + "\n" if prefix else "") + line + "\n" + suffix
+    return text.rstrip() + ("\n" if text.strip() else "") + line
+
+
 def upsert(text: str, section: str, key: str, value: str) -> str:
     header = re.compile(rf"(?m)^\s*\[{re.escape(section)}\]\s*(?:#.*)?$")
     match = header.search(text)
@@ -31,7 +45,8 @@ codex_home.mkdir(parents=True, exist_ok=True)
 path = codex_home / "config.toml"
 old = path.read_text(encoding="utf-8") if path.exists() else ""
 
-new = upsert(old, "features", "memories", "true")
+new = upsert_root(old, "cli_auth_credentials_store", '"file"')
+new = upsert(new, "features", "memories", "true")
 new = upsert(new, "agents", "max_concurrent_threads_per_session", "6")
 
 if new != old:

@@ -6,6 +6,7 @@ from pathlib import Path
 import os
 import re
 import shutil
+import tomllib
 
 
 def upsert_root(text: str, key: str, value: str) -> str:
@@ -45,9 +46,20 @@ codex_home.mkdir(parents=True, exist_ok=True)
 path = codex_home / "config.toml"
 old = path.read_text(encoding="utf-8") if path.exists() else ""
 
+if old.strip():
+    try:
+        tomllib.loads(old)
+    except tomllib.TOMLDecodeError as exc:
+        raise SystemExit(f"[FAIL] config.toml non valido: {exc}. Ripristina un backup valido prima di continuare.")
+
 new = upsert_root(old, "cli_auth_credentials_store", '"file"')
 new = upsert(new, "features", "memories", "true")
 new = upsert(new, "agents", "max_concurrent_threads_per_session", "6")
+
+try:
+    tomllib.loads(new)
+except tomllib.TOMLDecodeError as exc:
+    raise SystemExit(f"[FAIL] La modifica produrrebbe TOML non valido: {exc}")
 
 if new != old:
     if path.exists():

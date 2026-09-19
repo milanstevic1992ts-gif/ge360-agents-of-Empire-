@@ -46,9 +46,10 @@ codex_home.mkdir(parents=True, exist_ok=True)
 path = codex_home / "config.toml"
 old = path.read_text(encoding="utf-8") if path.exists() else ""
 
+parsed = {}
 if old.strip():
     try:
-        tomllib.loads(old)
+        parsed = tomllib.loads(old)
     except tomllib.TOMLDecodeError as exc:
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         broken = path.with_name(f"config.toml.corrotto-ge360-{stamp}")
@@ -81,6 +82,14 @@ if old.strip():
             old = ""
             print("[WARN] Nessun backup TOML valido trovato: ricreo una configurazione Codex minima.")
             
+if (
+    parsed.get("cli_auth_credentials_store") == "file"
+    and parsed.get("features", {}).get("memories") is True
+    and parsed.get("agents", {}).get("max_concurrent_threads_per_session") == 6
+):
+    print(f"[OK] Configurazione Codex già pronta: {path}")
+    raise SystemExit(0)
+
 new = upsert_root(old, "cli_auth_credentials_store", '"file"')
 new = upsert(new, "features", "memories", "true")
 new = upsert(new, "agents", "max_concurrent_threads_per_session", "6")

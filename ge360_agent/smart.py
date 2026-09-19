@@ -47,6 +47,24 @@ KNOWN_AGENTS = {
         },
         "label": "CRM",
     },
+    "ge360_data_intake": {
+        "anchors": {
+            "csv": 18,
+            "xlsx": 18,
+            "excel": 14,
+            "spreadsheet": 12,
+            "lista contatti": 12,
+            "deduplica": 10,
+            "normalizza": 8,
+        },
+        "keywords": {
+            "csv", "xlsx", "excel", "spreadsheet", "contatti", "contacts", "righe", "rows",
+            "colonne", "columns", "import", "importazione", "deduplica", "duplicate", "duplicati",
+            "normalizza", "normalizzazione", "pulizia", "clean", "dataset", "anagrafica",
+            "email", "telefono", "indirizzo", "geometri", "amministratori", "negozi",
+        },
+        "label": "Data Intake",
+    },
     "ge360_n8n_engineer": {
         "anchors": {
             "n8n": 18,

@@ -41,7 +41,7 @@ class SmartRouterTests(unittest.TestCase):
             AGENTS,
         )
         self.assertEqual(route.primary_agent, "ge360_n8n_engineer")
-        self.assertIn("ge360_automation", route.collaborators)
+        self.assertGreater(route.matched["ge360_n8n_engineer"], route.matched.get("ge360_automation", 0))
 
     def test_simple_systemd_uses_luna(self):
         route = smart.route_task(

@@ -96,6 +96,7 @@ function renderFiles(files) {
   if(!box) return;
   const existingIds=new Set(state.files.filter(f=>f.exists).map(f=>f.id));
   state.attachments.forEach(id=>{ if(!existingIds.has(id)) state.attachments.delete(id); });
+  if(window.renderChatAttachmentChips) window.renderChatAttachmentChips();
   if(!state.files.length) {
     box.innerHTML='<div class="sub">Nessun file caricato.</div>';
     return;
@@ -114,6 +115,7 @@ function renderFiles(files) {
       const id=el.getAttribute("data-file-id");
       if(el.checked) state.attachments.add(id); else state.attachments.delete(id);
       state.route=null;
+      if(window.renderChatAttachmentChips) window.renderChatAttachmentChips();
     };
   });
 }

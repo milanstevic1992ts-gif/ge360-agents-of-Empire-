@@ -358,6 +358,7 @@
               if (event.type === "thread.status") setStatus(event.status);
               if (event.type === "turn.completed") {
                 setStatus(event.status === "failed" ? "error" : "idle");
+                syncMessages(threadId);
                 refreshThreads(false);
               }
             } catch (error) {
@@ -370,10 +371,21 @@
     } catch (error) {
       if (!controller.signal.aborted && chatState.thread === threadId) {
         console.warn("Stream chat interrotto", error);
+        syncMessages(threadId);
         setTimeout(function () {
           if (chatState.thread === threadId) startStream(threadId);
         }, 900);
       }
+    }
+  }
+
+  async function syncMessages(threadId) {
+    if (!threadId || chatState.thread !== threadId) return;
+    try {
+      const response = await api("/api/chat/threads/" + encodeURIComponent(threadId) + "/messages?limit=400");
+      if (chatState.thread === threadId) renderMessages(response.messages || [], false);
+    } catch (error) {
+      console.warn("Sincronizzazione chat fallita", error);
     }
   }
 

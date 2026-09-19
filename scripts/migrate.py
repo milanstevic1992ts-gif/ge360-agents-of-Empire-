@@ -63,8 +63,34 @@ def migration_1() -> None:
         conn.close()
 
 
+def migration_2() -> None:
+    RUNTIME.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB)
+    try:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS uploaded_files (
+                id TEXT PRIMARY KEY,
+                uploaded_at TEXT NOT NULL,
+                original_name TEXT NOT NULL,
+                stored_path TEXT NOT NULL,
+                size_bytes INTEGER NOT NULL,
+                sha256 TEXT NOT NULL,
+                content_type TEXT NOT NULL DEFAULT ''
+            )
+            """
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_uploaded_files_uploaded_at ON uploaded_files(uploaded_at DESC)"
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 MIGRATIONS = {
     1: migration_1,
+    2: migration_2,
 }
 
 

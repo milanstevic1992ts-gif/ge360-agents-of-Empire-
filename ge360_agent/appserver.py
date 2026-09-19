@@ -583,7 +583,7 @@ class CodexAppServer:
                 "turn/steer",
                 {
                     "threadId": thread_id,
-                    "input": [{"type": "text", "text": text}],
+                    "input": [{"type": "text", "text": text, "text_elements": []}],
                     "expectedTurnId": current_turn,
                 },
                 timeout=20,
@@ -592,7 +592,7 @@ class CodexAppServer:
 
         params: dict[str, Any] = {
             "threadId": thread_id,
-            "input": [{"type": "text", "text": text}],
+            "input": [{"type": "text", "text": text, "text_elements": []}],
         }
         if effort:
             params["effort"] = effort

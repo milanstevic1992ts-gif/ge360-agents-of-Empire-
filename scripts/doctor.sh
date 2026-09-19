@@ -52,8 +52,20 @@ else
   warn "Trovati solo ${AGENT_COUNT:-0} subagenti Codex"
 fi
 
+if [ -f "$HOME/.codex/agents/ge360-n8n-engineer.toml" ]; then
+  ok "n8n Engineer installato"
+else
+  fail "Profilo ge360-n8n-engineer mancante"
+fi
+
+if [ -f "$HOME/.agents/skills/ge360-n8n-engineer/SKILL.md" ]; then
+  ok "Skill n8n Engineer installata"
+else
+  fail "Skill ge360-n8n-engineer mancante"
+fi
+
 RECIPE_COUNT="$(find "$ROOT/recipes" -maxdepth 1 -type f -name '*.toml' 2>/dev/null | wc -l | tr -d ' ')"
-if [ "${RECIPE_COUNT:-0}" -ge 6 ]; then
+if [ "${RECIPE_COUNT:-0}" -ge 7 ]; then
   ok "$RECIPE_COUNT playbook Smart disponibili"
 else
   warn "Playbook Smart mancanti o incompleti"

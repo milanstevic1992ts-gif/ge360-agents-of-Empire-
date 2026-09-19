@@ -1,0 +1,8 @@
+name = "SuiteCRM Health"
+description = "Diagnosi sicura di web, DB, worker e scheduler senza toccare volumi o dati."
+agent = "ge360_crm"
+model = "gpt-5.6-luna"
+risk = "low"
+prompt = """
+Controlla lo stack SuiteCRM. Verifica project name, env-file, stato web/db/worker/scheduler, healthcheck e log recenti. Non rimuovere volumi, non ricreare il database e non modificare credenziali. Se trovi un falso unhealthy, correggi solo il controllo errato e verifica alla fine.
+"""

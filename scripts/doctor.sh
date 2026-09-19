@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -u
 
-ROOT="\${GE360_AGENT_HOME:-/opt/ge360-agent-control}"
-PORT="\${GE360_AGENT_PORT:-8789}"
+ROOT="${GE360_AGENT_HOME:-/opt/ge360-agent-control}"
+PORT="${GE360_AGENT_PORT:-8789}"
 FAIL=0
 
 ok(){ printf '[OK]   %s\n' "$1"; }
@@ -46,14 +46,14 @@ else
 fi
 
 AGENT_COUNT="$(find "$HOME/.codex/agents" -maxdepth 1 -type f -name '*.toml' 2>/dev/null | wc -l | tr -d ' ')"
-if [ "\${AGENT_COUNT:-0}" -ge 6 ]; then
+if [ "${AGENT_COUNT:-0}" -ge 7 ]; then
   ok "$AGENT_COUNT subagenti Codex installati"
 else
-  warn "Trovati solo \${AGENT_COUNT:-0} subagenti Codex"
+  warn "Trovati solo ${AGENT_COUNT:-0} subagenti Codex"
 fi
 
 RECIPE_COUNT="$(find "$ROOT/recipes" -maxdepth 1 -type f -name '*.toml' 2>/dev/null | wc -l | tr -d ' ')"
-if [ "\${RECIPE_COUNT:-0}" -ge 6 ]; then
+if [ "${RECIPE_COUNT:-0}" -ge 6 ]; then
   ok "$RECIPE_COUNT playbook Smart disponibili"
 else
   warn "Playbook Smart mancanti o incompleti"
@@ -79,8 +79,8 @@ if command -v systemctl >/dev/null 2>&1; then
   fi
 fi
 
-if curl -fsS --max-time 3 "http://127.0.0.1:\${PORT}/api/status" >/dev/null 2>&1; then
-  ok "Dashboard API risponde su 127.0.0.1:\${PORT}"
+if curl -fsS --max-time 3 "http://127.0.0.1:${PORT}/api/status" >/dev/null 2>&1; then
+  ok "Dashboard API risponde su 127.0.0.1:${PORT}"
 else
   warn "Dashboard API non raggiungibile (o token richiesto)"
 fi

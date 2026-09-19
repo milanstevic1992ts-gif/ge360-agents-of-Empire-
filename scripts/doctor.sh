@@ -46,10 +46,22 @@ else
 fi
 
 AGENT_COUNT="$(find "$HOME/.codex/agents" -maxdepth 1 -type f -name '*.toml' 2>/dev/null | wc -l | tr -d ' ')"
-if [ "${AGENT_COUNT:-0}" -ge 7 ]; then
+if [ "${AGENT_COUNT:-0}" -ge 8 ]; then
   ok "$AGENT_COUNT subagenti Codex installati"
 else
   warn "Trovati solo ${AGENT_COUNT:-0} subagenti Codex"
+fi
+
+if [ -f "$HOME/.codex/agents/ge360-data-intake.toml" ]; then
+  ok "Data Intake Engineer installato"
+else
+  fail "Profilo ge360-data-intake mancante"
+fi
+
+if [ -f "$HOME/.agents/skills/ge360-data-intake/SKILL.md" ]; then
+  ok "Skill Data Intake installata"
+else
+  fail "Skill ge360-data-intake mancante"
 fi
 
 if [ -f "$HOME/.codex/agents/ge360-n8n-engineer.toml" ]; then
@@ -65,7 +77,7 @@ else
 fi
 
 RECIPE_COUNT="$(find "$ROOT/recipes" -maxdepth 1 -type f -name '*.toml' 2>/dev/null | wc -l | tr -d ' ')"
-if [ "${RECIPE_COUNT:-0}" -ge 7 ]; then
+if [ "${RECIPE_COUNT:-0}" -ge 8 ]; then
   ok "$RECIPE_COUNT playbook Smart disponibili"
 else
   warn "Playbook Smart mancanti o incompleti"

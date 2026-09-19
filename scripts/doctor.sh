@@ -30,7 +30,7 @@ else
 fi
 
 if [ -x "$ROOT/.venv/bin/python" ]; then
-  if (cd "$ROOT" && "$ROOT/.venv/bin/python" -c 'import fastapi, uvicorn, ge360_agent.main, ge360_agent.smart, ge360_agent.activity, ge360_agent.appserver, ge360_agent.uploads, ge360_agent.versioning') >/dev/null 2>&1; then
+  if (cd "$ROOT" && "$ROOT/.venv/bin/python" -c 'import fastapi, uvicorn, ge360_agent.main, ge360_agent.smart, ge360_agent.activity, ge360_agent.appserver, ge360_agent.chat, ge360_agent.uploads, ge360_agent.versioning') >/dev/null 2>&1; then
     ok "Backend + Smart Router + update modules importabili"
   else
     fail "Backend Python o Smart Router non importabile"
@@ -84,10 +84,10 @@ else
 fi
 
 if command -v node >/dev/null 2>&1; then
-  if node --check "$ROOT/web/app.js" >/dev/null 2>&1; then
-    ok "JavaScript dashboard valido"
+  if node --check "$ROOT/web/app.js" >/dev/null 2>&1 && node --check "$ROOT/web/chat.js" >/dev/null 2>&1; then
+    ok "JavaScript dashboard + chat valido"
   else
-    fail "Errore sintassi in web/app.js"
+    fail "Errore sintassi JavaScript in web/app.js o web/chat.js"
   fi
 else
   warn "node non presente: controllo sintassi JavaScript saltato"
@@ -112,7 +112,7 @@ else
 fi
 
 if codex app-server --help >/dev/null 2>&1; then
-  ok "Codex App Server disponibile (provider opzionale)"
+  ok "Codex App Server disponibile (motore chat strutturata)"
 else
   warn "Codex App Server non disponibile in questa versione CLI"
 fi

@@ -18,6 +18,7 @@ class Session:
     name: str
     created: int
     attached: bool
+    model: str = ""
 
 
 def _tmux(args: list[str], timeout: int = 8, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -50,7 +51,11 @@ class TmuxManager:
 
     def list(self) -> list[Session]:
         proc = _tmux(
-            ["list-sessions", "-F", "#{session_name}\t#{session_created}\t#{session_attached}"],
+            [
+                "list-sessions",
+                "-F",
+                "#{session_name}\t#{session_created}\t#{session_attached}\t#{@ge360_model}",
+            ],
             check=False,
         )
         if proc.returncode != 0:
@@ -58,18 +63,19 @@ class TmuxManager:
         result: list[Session] = []
         for line in proc.stdout.splitlines():
             parts = line.split("\t")
-            if len(parts) != 3 or not parts[0].startswith(self.prefix):
+            if len(parts) < 3 or not parts[0].startswith(self.prefix):
                 continue
             result.append(
                 Session(
                     name=parts[0],
                     created=int(parts[1] or 0),
                     attached=parts[2] == "1",
+                    model=parts[3] if len(parts) > 3 else "",
                 )
             )
         return result
 
-    def create(self, short_name: str, cwd: str, command: str) -> str:
+    def create(self, short_name: str, cwd: str, command: str, model: str = "") -> str:
         name = self._full_name(short_name)
         exists = _tmux(["has-session", "-t", name], check=False)
         if exists.returncode == 0:
@@ -78,6 +84,8 @@ class TmuxManager:
         if not cmd:
             raise TmuxError("comando Codex vuoto")
         _tmux(["new-session", "-d", "-s", name, "-c", cwd, "--", *cmd], timeout=12)
+        if model:
+            _tmux(["set-option", "-t", name, "@ge360_model", model], check=False)
         time.sleep(0.25)
         return name
 
@@ -95,6 +103,11 @@ class TmuxManager:
         lines = max(20, min(lines, 1000))
         proc = _tmux(["capture-pane", "-p", "-J", "-S", f"-{lines}", "-t", full_name])
         return proc.stdout
+
+    def request_status(self, full_name: str) -> str:
+        self.send(full_name, "/status")
+        time.sleep(0.8)
+        return self.capture(full_name, 180)
 
     def stop(self, full_name: str) -> None:
         self._assert_managed(full_name)

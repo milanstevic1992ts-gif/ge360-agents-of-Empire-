@@ -210,7 +210,7 @@ function renderAgents(agents, sessions) {
   const cards=visible.map(({a,i})=>{
     const v=agentVisual(a.id,a.name);
     return '<article class="agent-card agent-'+safe(v.cls)+'">'+
-      '<div class="agent-top"><div class="agent-identity"><div class="agent-avatar">'+safe(v.badge)+'</div><div><div class="agent-name">'+safe(v.name)+'</div><div class="agent-role">'+safe(v.role)+'</div></div></div><span class="agent-status ready">PRONTO</span></div>'+
+      '<div class="agent-top"><div class="agent-identity"><div class="agent-avatar">'+safe(v.badge)+'</div><div><div class="agent-name">'+safe(v.name)+'</div><div class="agent-role">'+safe(v.role)+'</div></div></div><span class="agent-status '+safe(a.status||'ready')+'">'+safe((a.status||'ready').toUpperCase())+'</span></div>'+
       '<p>'+safe(a.description||'Agente specializzato GE360')+'</p>'+
       '<div class="agent-footer"><button class="ghost small" data-agent-detail="'+i+'">Dettagli</button><span class="agent-id">'+safe(a.id)+'</span></div></article>';
   }).join('');
@@ -233,6 +233,25 @@ function showAgentDetail(index) {
   $("agent-detail-panel").classList.remove("hidden");
   $("agent-detail-panel").scrollIntoView({behavior:"smooth",block:"start"});
 }
+function renderAgentTimeline(events) {
+  const box=$("agent-timeline");
+  if(!box) return;
+  const list=(events||[]).slice(0,30);
+  if(!list.length) {
+    box.innerHTML='<div class="sub">La timeline si popolerà quando avvierai un incarico Smart.</div>';
+    return;
+  }
+  box.innerHTML=list.map(e=>{
+    const visual=agentVisual(e.agent_id,e.agent_id);
+    return '<div class="timeline-row">'+
+      '<div class="timeline-dot '+safe(e.status||'ready')+'"></div>'+
+      '<div class="timeline-main"><div><b>'+safe(visual.name)+'</b> <span class="timeline-status '+safe(e.status||'ready')+'">'+safe((e.status||'ready').toUpperCase())+'</span></div>'+
+      '<div class="sub">'+safe(e.detail||e.event_type||'Evento agente')+'</div>'+
+      '<div class="tiny">'+safe(e.session)+' · '+safe(e.event_type)+' · '+safe(e.created_at)+'</div></div>'+
+      '</div>';
+  }).join('');
+}
+
 function renderSmartMemory(smart) {
   const stats=smart?.stats||[];
   $("smart-stats").innerHTML=stats.length ? stats.map(x=>{
@@ -265,6 +284,7 @@ async function sendFeedback(session,rating) {
 
 function renderStatus(s) {
   state.status = s;
+  if ($("release-version")) $("release-version").textContent="v"+(s.release?.version||"?");
   $("overall").textContent = "SERVER ONLINE";
   $("overall").className = "status-pill ok";
 
@@ -283,6 +303,7 @@ function renderStatus(s) {
   renderEfforts(s.reasoning_efforts||[]);
   renderRecipes(s.recipes||[]);
   renderAgents(s.agents||[],s.sessions||[]);
+  renderAgentTimeline(s.agent_timeline||[]);
   renderSmartMemory(s.smart||{});
 
   const aw=$("auth-warning");

@@ -1,0 +1,8 @@
+name = "systemd Recovery"
+description = "Diagnosi e ripristino di un servizio Debian senza riavvii indiscriminati."
+agent = "ge360_sysadmin"
+model = "gpt-5.6-luna"
+risk = "low"
+prompt = """
+Controlla il servizio systemd indicato con is-active, status e journalctl. Identifica la causa prima di modificare. Fai backup della configurazione rilevante, applica il fix minimo, riavvia solo l'unità coinvolta e verifica log freschi e stato finale.
+"""
